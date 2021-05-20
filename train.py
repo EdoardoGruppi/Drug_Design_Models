@@ -77,7 +77,7 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
         # Get Sampler and Loader to prepare the test dataset
         sampler_test = data.BalancedSampler(cost=[len(item) for item in db_test], batch_size=batch_size_test)
         loader_test = data.MolRNNLoader(db_test, batch_sampler=sampler_test, num_workers=num_workers, k=k, p=p)
-        # Iterable object to get the batches of training and testing samples
+        # Iterable objects to get the batches of training and testing samples
         it_train, it_test = iter(loader_train), iter(loader_test)
 
     if not is_continuous:
@@ -193,7 +193,6 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
                 model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
                 trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
                 # Save a new observation in the log.out file
-
                 f.write('{:<10}|{:<20.8f}|{:<20.8f}|{:<10.7f}\n'.format(global_counter, float(time.time() - t0) / 60,
                                                                         loss, trainer.learning_rate))
                 print('{:<10}|{:<20.8f}|{:<20.8f}|{:<10.7f}'.format(global_counter, float(time.time() - t0) / 60,
@@ -257,236 +256,234 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
         200 steps. Such a parameter could increase notably the execution time since it defines when the model is saved.
     :return:
     """
+    # If a checkpoint is already saved put is_continuous as True
     is_continuous = all([os.path.isfile(os.path.join(checkpoint_dir, _n)) for _n in ['log.out', 'ckpt.params',
                                                                                      'trainer.status']])
 
     if is_full:
         if cond_type != 'kinase':
             if cond_type == 'scaffold':
+                # Create the scaffold conditional code as a list of booleans. True is encountered when the scaffold
+                # is present in the related molecule
                 cond = data.SparseFP(num_scaffolds)
                 N_C = num_scaffolds
             elif cond_type == 'prop':
+                # Create the property conditional code as a list of property values
                 cond = data.Delimited()
                 N_C = 2
             else:
                 raise ValueError
-
+            # Read every line of the given file and remove all the characters: '\n' and '\r'
             with open(file_name) as f:
                 dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
-
             # get sampler and loader for training set
             sampler_train = data.BalancedSampler(cost=[len(l.split('\t')[0]) for l in dataset], batch_size=batch_size)
             loader_train = data.CMolRNNLoader(dataset, batch_sampler=sampler_train, num_workers=num_workers,
                                               k=k, p=p, conditional=cond)
-
             loader_test = []
         else:
+            # Create the kinase conditional code as a list of float values.
             cond = data.Delimited()
             N_C = 2
-
-            if all([os.path.isfile(os.path.join(checkpoint_dir, _n)) for _n in
-                    ['log.out', 'ckpt.params', 'trainer.status']]):
-                is_continuous = True
-            else:
-                is_continuous = False
-
+            # Read every line of the given file and remove all the characters: '\n' and '\r'
             with open(file_name) as f:
                 dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
 
-            # get dataset
-            def _filter(_line, _i):
-                return int(_line.split('\t')[-1]) == _i
-
-            db_train = data.Lambda(data.Filter(dataset,
-                                               fn=lambda _x: not _filter(_x, fold_id)),
-                                   fn=lambda _x: _x[:-2])
-            db_test = data.Lambda(data.Filter(dataset,
-                                              fn=lambda _x: _filter(_x, fold_id)),
-                                  fn=lambda _x: _x[:-2])
-
-            # get sampler and loader for test set
-            loader_test = data.CMolRNNLoader(db_test, shuffle=True, num_workers=num_workers,
-                                             k=k, p=p, conditional=cond, batch_size=batch_size_test)
-
-            # get sampler and loader for training set
-            loader_train = data.CMolRNNLoader(db_train, shuffle=True, num_workers=num_workers,
-                                              k=k, p=p, conditional=cond, batch_size=batch_size)
-
-        # get iterator
-        it_train, it_test = iter(loader_train), iter(loader_test)
-    else:
-        if cond_type != 'kinase':
-            if cond_type == 'scaffold':
-                cond = data.SparseFP(num_scaffolds)
-                N_C = num_scaffolds
-            elif cond_type == 'prop':
-                cond = data.Delimited()
-                N_C = 2
-            else:
-                raise ValueError
-
-            if all([os.path.isfile(os.path.join(checkpoint_dir, _n)) for _n in
-                    ['log.out', 'ckpt.params', 'trainer.status']]):
-                is_continuous = True
-            else:
-                is_continuous = False
-
-            with open(file_name) as f:
-                dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
-
-            # get dataset
-            db_train = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=True)
-            db_test = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=False)
-
-            # get sampler and loader for training set
-            sampler_train = data.BalancedSampler(cost=[len(l.split('\t')[0]) for l in db_train], batch_size=batch_size)
-            loader_train = data.CMolRNNLoader(db_train, batch_sampler=sampler_train, num_workers=num_workers,
-                                              k=k, p=p, conditional=cond)
-
-            # get sampler and loader for test set
-            sampler_test = data.BalancedSampler(cost=[len(l.split('\t'[0])) for l in db_test],
-                                                batch_size=batch_size_test)
-            loader_test = data.CMolRNNLoader(db_test, batch_sampler=sampler_test, num_workers=num_workers,
-                                             k=k, p=p, conditional=cond)
-
-        else:
-            cond = data.Delimited()
-            N_C = 2
-
-            if all([os.path.isfile(os.path.join(checkpoint_dir, _n)) for _n in
-                    ['log.out', 'ckpt.params', 'trainer.status']]):
-                is_continuous = True
-            else:
-                is_continuous = False
-
-            with open(file_name) as f:
-                dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
-
-            # get dataset
+            # Filter a line setting the last element as the value passed.
             def _filter(_line, _i):
                 return int(_line.split('\t')[-1]) == _i
 
             db_train = data.Lambda(data.Filter(dataset, fn=lambda _x: not _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
             db_test = data.Lambda(data.Filter(dataset, fn=lambda _x: _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
-            # get sampler and loader for training set
-            loader_train = data.CMolRNNLoader(db_train, shuffle=True, num_workers=num_workers,
-                                              k=k, p=p, conditional=cond, batch_size=batch_size)
-            # get sampler and loader for test set
-            loader_test = data.CMolRNNLoader(db_test, shuffle=True, num_workers=num_workers,
-                                             k=k, p=p, conditional=cond, batch_size=batch_size_test)
-        # get iterator
+
+            # Get Sampler and Loader to prepare the training dataset
+            loader_train = data.CMolRNNLoader(db_train, shuffle=True, num_workers=num_workers, k=k, p=p,
+                                              conditional=cond, batch_size=batch_size)
+            # Get Sampler and Loader to prepare the test dataset
+            loader_test = data.CMolRNNLoader(db_test, shuffle=True, num_workers=num_workers, k=k, p=p, conditional=cond,
+                                             batch_size=batch_size_test)
+        # Iterable objects to get the batches of samples
+        it_train, it_test = iter(loader_train), iter(loader_test)
+    else:
+        if cond_type != 'kinase':
+            if cond_type == 'scaffold':
+                # Create the scaffold conditional code as a list of booleans. True is encountered when the scaffold
+                # is present in the related molecule
+                cond = data.SparseFP(num_scaffolds)
+                N_C = num_scaffolds
+            elif cond_type == 'prop':
+                # Create the property conditional code as a list of property values
+                cond = data.Delimited()
+                N_C = 2
+            else:
+                raise ValueError
+            # Read every line of the given file and remove all the characters: '\n' and '\r'
+            with open(file_name) as f:
+                dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
+            # Perform k-fold split of a given dataset
+            db_train = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=True)
+            # Select the fold_id fold for the testing phase
+            db_test = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=False)
+            # Get Sampler and Loader to prepare the training dataset
+            sampler_train = data.BalancedSampler(cost=[len(l.split('\t')[0]) for l in db_train], batch_size=batch_size)
+            loader_train = data.CMolRNNLoader(db_train, batch_sampler=sampler_train, num_workers=num_workers,
+                                              k=k, p=p, conditional=cond)
+            # Get Sampler and Loader to prepare the test dataset
+            sampler_test = data.BalancedSampler(cost=[len(l.split('\t'[0])) for l in db_test],
+                                                batch_size=batch_size_test)
+            loader_test = data.CMolRNNLoader(db_test, batch_sampler=sampler_test, num_workers=num_workers,
+                                             k=k, p=p, conditional=cond)
+        else:
+            # Create the kinase conditional code as a list of float values.
+            cond = data.Delimited()
+            N_C = 2
+            # Read every line of the given file and remove all the characters: '\n' and '\r'
+            with open(file_name) as f:
+                dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
+
+            # Filter a line setting the last element as the value passed.
+            def _filter(_line, _i):
+                return int(_line.split('\t')[-1]) == _i
+
+            db_train = data.Lambda(data.Filter(dataset, fn=lambda _x: not _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
+            db_test = data.Lambda(data.Filter(dataset, fn=lambda _x: _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
+            # Get Sampler and Loader to prepare the training dataset
+            loader_train = data.CMolRNNLoader(db_train, shuffle=True, num_workers=num_workers, k=k, p=p,
+                                              conditional=cond, batch_size=batch_size)
+            # Get Sampler and Loader to prepare the test dataset
+            loader_test = data.CMolRNNLoader(db_test, shuffle=True, num_workers=num_workers, k=k, p=p, conditional=cond,
+                                             batch_size=batch_size_test)
+        # Iterable objects to get the batches of training and testing samples
         it_train, it_test = iter(loader_train), iter(loader_test)
 
-    # build model
     if not is_continuous:
-        configs = {'N_C': N_C, 'embedding_size': embedding_size, 'hidden_sizes': hidden_sizes,
-                   'skip_layer_size': skip_layer_size, 'dense_layer_sizes': dense_layer_sizes,
-                   'policy_layers_size': policy_layers_size,
-                   'activation': activation, 'rename': True, 'rnn_layers': rnn_layers}
+        # If the model does not still exist, create a json file saving all the model architecture parameters
+        configs = {'N_C': N_C, 'F_e': embedding_size, 'F_h': hidden_sizes, 'F_skip': skip_layer_size,
+                   'F_c': dense_layer_sizes, 'Fh_policy': policy_layers_size, 'activation': activation, 'rename': True,
+                   'N_rnn': rnn_layers}
+        # Open a json file and print the content. Create it if does not exist.
         with open(os.path.join(checkpoint_dir, 'configs.json'), 'w') as f:
             json.dump(configs, f)
     else:
+        # If the model already exists, load the architecture parameters
         with open(os.path.join(checkpoint_dir, 'configs.json')) as f:
             configs = json.load(f)
 
+    # Build the model
     model = models.CVanillaMolGen_RNN(get_mol_spec().num_atom_types, get_mol_spec().num_bond_types, D=2, **configs)
-
+    # List of all the available GPUs
     ctx = [mx.gpu(i) for i in gpu_ids]
+    # Initialize or reinitialize the parameters depending on whether the model has been already created.
     model.collect_params().initialize(mx.init.Xavier(), force_reinit=True, ctx=ctx)
-    if not is_continuous:
-        if cond_type == 'kinase':
-            # todo model.load_params(os.path.join(checkpoint_dir, 'ckpt.params.bk'), ctx=ctx, allow_missing=True)
-            argsd = 5
-    else:
-        model.load_params(os.path.join(checkpoint_dir, 'ckpt.params'), ctx=ctx)
-
-    # construct optimizer
+    if is_continuous:
+        model.load_parameters(os.path.join(checkpoint_dir, 'ckpt.params'), ctx=ctx)
+    # Load optimizer
     opt = mx.optimizer.Adam(learning_rate=lr, clip_gradient=clip_grad)
+    # Applies an Optimizer on a set of Parameters. Trainer should be used together with autograd.
     trainer = gluon.Trainer(model.collect_params(), opt)
+    # If the model has been already trained load the trainer states (e.g. optimizer, momentum) from a file.
     if is_continuous:
         trainer.load_states(os.path.join(checkpoint_dir, 'trainer.status'))
 
+    # If the model is new start the counter from zero otherwise...
     if not is_continuous:
         t0 = time.time()
         global_counter = 0
     else:
+        # load the last record values saved in the log.out file
         with open(os.path.join(checkpoint_dir, 'log.out')) as f:
             records = f.readlines()
-            if records[-1] != 'Training finished\n':
-                final_record = records[-1]
-            else:
-                final_record = records[-2]
-        count, t_final = int(final_record.split('\t')[0]), float(final_record.split('\t')[1])
+            # The records[-1] is the string: 'Finished Training!' unless an error occurred.
+            final_record = records[-2]
+        # Each line in the log.out file contains: the step number, the time spent (min), the loss and the lr values
+        # Retrieve the last step number and time recorded.
+        count, t_final = int(final_record.split('|')[0]), float(final_record.split('|')[1])
+        # Code line to stat the time from the last saved value. t0 is expressed in seconds.
         t0 = time.time() - t_final * 60
+        # Code line to stat the step count from the last saved value.
         global_counter = count
 
-    with open(os.path.join(checkpoint_dir, 'log.out'),
-              mode='w' if not is_continuous else 'a') as f:
+    # Open the log.out file in different modes according if it has been already created
+    with open(os.path.join(checkpoint_dir, 'log.out'), mode='w' if not is_continuous else 'a') as f:
         if not is_continuous:
-            f.write('step\ttime(h)\tloss\tlr\n')
-        while True:
+            # If the model is new initialise the table with the name of the columns
+            f.write('{:<10}|{:<20}|{:<20}|{:<10}'.format('Step', 'Time (min)', 'Loss', 'LR') + '\n' + '--' * 30 + '\n')
+        # Perform a training step until required
+        print('{:<10}|{:<20}|{:<20}|{:<10}'.format('Step', 'Time (min)', 'Loss', 'LR') + '\n' + '--' * 30)
+        while True and (global_counter < iterations):
             global_counter += 1
-
+            # Load a batch of input data for each GPUs available
             try:
                 inputs = [next(it_train) for _ in range(len(gpu_ids))]
             except StopIteration:
                 it_train = iter(loader_train)
                 inputs = [next(it_train) for _ in range(len(gpu_ids))]
-
-            # move to gpu
-            inputs = [data.CMolRNNLoader.from_numpy_to_tensor(input_i, j)
-                      for j, input_i in zip(gpu_ids, inputs)]
-
+            # Transform the data into tensors and pass them to the available GPUs
+            inputs = [data.CMolRNNLoader.from_numpy_to_tensor(input_i, j) for j, input_i in zip(gpu_ids, inputs)]
+            # Returns an autograd recording scope context to be used in ‘with’ statement and captures code that needs
+            # gradients to be calculated.
             with autograd.record():
+                # Compute the average loss computed for the n batch simultaneously processed.
+                # The as_in_context returns an array on the target device with the same value as this array.
                 loss = [(model(*input_i)).as_in_context(mx.gpu(gpu_ids[0])) for input_i in inputs]
+                # Average loss
                 loss = sum(loss) / len(gpu_ids)
+                # Backward computation
                 loss.backward()
-
+            # Use nd.waitall to ensure that the async operations are completely executed in the time guard.
             nd.waitall()
+            # Execute the garbage collector
             gc.collect()
 
+            # Execution of a training step
             trainer.step(batch_size=1)
-
+            # Decay the learning rate after n training steps
             if global_counter % decay_step == 0:
                 trainer.set_learning_rate(trainer.learning_rate * (1.0 - decay))
-
+            # Record an observation in the table only every m steps carried out
             if global_counter % summary_step == 0:
+                # If the model is trained in the entire dataset the loss is that already computed
                 if is_full:
                     loss = np.asscalar((sum(loss) / len(gpu_ids)).asnumpy())
+                # In the opposite case compute the loss on a test batch
                 else:
+                    # Delete useless variables and collect the garbage
                     del loss, inputs
                     gc.collect()
-
+                    # Load a batch of input test data for each GPUs available
                     try:
                         inputs = [next(it_test) for _ in range(len(gpu_ids))]
                     except StopIteration:
                         it_test = iter(loader_test)
                         inputs = [next(it_test) for _ in range(len(gpu_ids))]
-
+                    # Returns a scope context to be used in ‘with’ statement in which forward pass behavior is set to
+                    # inference mode, without changing the recording states.
                     with autograd.predict_mode():
-                        # move to gpu
-                        inputs = [data.CMolRNNLoader.from_numpy_to_tensor(input_i, j)
-                                  for j, input_i in zip(gpu_ids, inputs)]
+                        # Move the data converted into tensors into the GPUs
+                        inputs = [data.CMolRNNLoader.from_numpy_to_tensor(input_i, j) for j, input_i in
+                                  zip(gpu_ids, inputs)]
+                        # Compute the average loss on the batches simultaneously processed
                         loss = [(model(*input_i)).as_in_context(mx.gpu(gpu_ids[0])) for input_i in inputs]
                         loss = np.asscalar((sum(loss) / len(gpu_ids)).asnumpy())
-
-                model.save_params(os.path.join(checkpoint_dir, 'ckpt.params'))
+                # Save the parameters and the states of the model
+                model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
                 trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
-
-                f.write('{}\t{}\t{}\t{}\n'.format(global_counter, float(time.time() - t0) / 60, loss,
-                                                  trainer.learning_rate))
-                print('{}\t{}\t{}\t{}\n'.format(global_counter, float(time.time() - t0) / 60, loss,
-                                                trainer.learning_rate))
+                # Save a new observation in the log.out file
+                f.write('{:<10}|{:<20.8f}|{:<20.8f}|{:<10.7f}\n'.format(global_counter, float(time.time() - t0) / 60,
+                                                                        loss, trainer.learning_rate))
+                print('{:<10}|{:<20.8f}|{:<20.8f}|{:<10.7f}'.format(global_counter, float(time.time() - t0) / 60,
+                                                                    loss, trainer.learning_rate))
+                # The flush() method clears the internal buffer of the file.
                 f.flush()
-
+                # Delete useless variables and collect the garbage
                 del loss, inputs
                 gc.collect()
-
+            # Interrupt the training whenever the counter is greater than the iterations required.
             if global_counter >= iterations:
+                # Record the interruption of the training
+                f.write('Training finished\n')
+                print('Training finished')
                 break
-
-        # save before exit
+        # Save model parameters and state before exiting
         model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
         trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
-
-        f.write('Training finished\n')
