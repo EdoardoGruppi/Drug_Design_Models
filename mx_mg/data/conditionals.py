@@ -19,12 +19,14 @@ class Delimited(Conditional):
         self.d = d
 
     def __call__(self, line):
+        # Remove the '\n' and '\r' characters
         line = line.strip('\n').strip('\r')
+        # Split the string every delimiter met.
         line = line.split(self.d)
-
+        # The smiles string is the first element
         smiles = line[0]
+        # Initialise a conditional code as an array of the measured property values
         c = np.array([float(c_i) for c_i in line[1:]], dtype=np.float32)
-
         return smiles, c
 
 
@@ -34,11 +36,17 @@ class SparseFP(Conditional):
         self.fp_size = fp_size
 
     def __call__(self, line):
+        # Remove the '\n' and '\r' characters and split the string every '\t' met.
         record = line.strip('\n').strip('\r').split('\t')
+        # Initialise a conditional code as an array of False elements. Each related to a specific scaffold.
         c = np.array([False, ] * self.fp_size, dtype=bool)
+        # The smiles string is the first element, while the others are the conditional codes
         smiles, on_bits = record[0], record[1:]
+        # If the first element after the smiles string is not ''
         if on_bits[0] != '':
+            # Save a list of all the elements, other than the smiles string, expressed as integers
             on_bits = [int(_i) for _i in on_bits]
+            # Change the values of the conditional array into True in correspondence of the present scaffold.
             c[on_bits] = True
         return smiles, c
 
