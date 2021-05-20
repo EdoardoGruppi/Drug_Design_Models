@@ -1,6 +1,5 @@
-checkpoint/ck_mol_rnn
-checkpoint/cp_mol_rnn
-checkpoint/mol_rnn
+checkpoint/*
+!checkpoint/checkpoint.md
 
 datasets/*
 !datasets/datasets.md
