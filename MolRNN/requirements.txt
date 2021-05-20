@@ -55,7 +55,7 @@ setuptools=52.0.0=py36haa95532_0
 six=1.15.0=py36haa95532_0
 sklearn=0.0=pypi_0
 sqlite=3.35.4=h2bbff1b_0
-tbb=2021.2.0=pypi_0
+tbb=0.2=pypi_0
 tbb4py=2021.2.0=pypi_0
 threadpoolctl=2.1.0=pypi_0
 tk=8.6.10=he774522_0
