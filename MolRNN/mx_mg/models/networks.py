@@ -7,8 +7,8 @@ from abc import ABCMeta, abstractmethod
 from . import modules
 from . import functions as fn
 
-
 __all__ = ['VanillaMolGen_RNN', 'VanillaMolGen', 'CVanillaMolGen_RNN']
+
 
 # Base for MOLMP unconditional ---------------------------------------------------------
 class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
@@ -29,18 +29,14 @@ class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
             # embeddings
             self.embedding_atom = nn.Embedding(self.N_A, self.F_e)
             self.embedding_mask = nn.Embedding(3, self.F_e)
-
             # graph conv
             self._build_graph_conv(*args, **kwargs)
-
             # fully connected
             self.dense = nn.Sequential()
             for i, (f_in, f_out) in enumerate(zip([self.F_skip, ] + self.F_c[:-1], self.F_c)):
                 self.dense.add(modules.Linear_BN(f_in, f_out))
-
             # policy
-            self.policy_0 = self.params.get('policy_0', shape=[self.N_A, ],
-                                            init=mx.init.Zero(),
+            self.policy_0 = self.params.get('policy_0', shape=[self.N_A, ], init=mx.init.Zero(),
                                             allow_deferred_init=False)
             self.policy_h = modules.Policy(self.F_c[-1], self.Fh_policy, self.N_A, self.N_B)
 
@@ -56,54 +52,41 @@ class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
 
     def _policy_0(self, ctx):
         policy_0 = nd.exp(self.policy_0.data(ctx))
-        policy_0 = policy_0/policy_0.sum()
+        policy_0 = policy_0 / policy_0.sum()
         return policy_0
 
     def _policy(self, X, A, NX, NX_rep, last_append_mask):
         # get initial embedding
         X = self.embedding_atom(X) + self.embedding_mask(last_append_mask)
-
         # convolution
         X = self._graph_conv_forward(X, A)
-
         # linear
         X = self.dense(X)
-
         # policy
         append, connect, end = self.policy_h(X, NX, NX_rep)
-
         return append, connect, end
 
-    def _likelihood(self, init, append, connect, end,
-                    action_0, actions, iw_ids, log_p_sigma,
-                    batch_size, iw_size):
-
+    def _likelihood(self, init, append, connect, end, action_0, actions, iw_ids, log_p_sigma, batch_size, iw_size):
         # decompose action:
         action_type, node_type, edge_type, append_pos, connect_pos = \
             actions[:, 0], actions[:, 1], actions[:, 2], actions[:, 3], actions[:, 4]
-        _log_mask = lambda _x, _mask: _mask * nd.log(_x + 1e-10) + (1- _mask) * nd.zeros_like(_x)
-
+        _log_mask = lambda _x, _mask: _mask * nd.log(_x + 1e-10) + (1 - _mask) * nd.zeros_like(_x)
         # init
         init = init.reshape([batch_size * iw_size, self.N_A])
         index = nd.stack(nd.arange(action_0.shape[0], ctx=action_0.context, dtype='int32'), action_0, axis=0)
         loss_init = nd.log(nd.gather_nd(init, index) + 1e-10)
-
         # end
         loss_end = _log_mask(end, nd.cast(action_type == 2, 'float32'))
-
         # append
         index = nd.stack(append_pos, node_type, edge_type, axis=0)
         loss_append = _log_mask(nd.gather_nd(append, index), nd.cast(action_type == 0, 'float32'))
-
         # connect
         index = nd.stack(connect_pos, edge_type, axis=0)
         loss_connect = _log_mask(nd.gather_nd(connect, index), nd.cast(action_type == 1, 'float32'))
-
         # sum up results
         log_p_x = loss_end + loss_append + loss_connect
-        log_p_x = fn.squeeze(fn.SegmentSumFn(iw_ids, batch_size*iw_size)(fn.unsqueeze(log_p_x, -1)), -1)
+        log_p_x = fn.squeeze(fn.SegmentSumFn(iw_ids, batch_size * iw_size)(fn.unsqueeze(log_p_x, -1)), -1)
         log_p_x = log_p_x + loss_init
-
         # reshape
         log_p_x = log_p_x.reshape([batch_size, iw_size])
         log_p_sigma = log_p_sigma.reshape([batch_size, iw_size])
@@ -112,7 +95,7 @@ class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
         return l
 
     def forward(self, *input):
-        if self.mode=='loss' or self.mode=='likelihood':
+        if self.mode == 'loss' or self.mode == 'likelihood':
             X, A, iw_ids, last_append_mask, \
             NX, NX_rep, action_0, actions, log_p, \
             batch_size, iw_size = input
@@ -120,7 +103,7 @@ class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
             init = self._policy_0(X.context).tile([batch_size * iw_size, 1])
             append, connect, end = self._policy(X, A, NX, NX_rep, last_append_mask)
             l = self._likelihood(init, append, connect, end, action_0, actions, iw_ids, log_p, batch_size, iw_size)
-            if self.mode=='likelihood':
+            if self.mode == 'likelihood':
                 return l
             else:
                 return -l.mean()
@@ -134,12 +117,10 @@ class MoleculeGenerator(nn.Block, metaclass=ABCMeta):
 # Base for MOLRNN unconditional ---------------------------------------------------------
 class MoleculeGenerator_RNN(MoleculeGenerator, metaclass=ABCMeta):
 
-    def __init__(self, N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation,
-                 N_rnn, *args, **kwargs):
-        super(MoleculeGenerator_RNN, self).__init__(N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation,
-                                                    *args, **kwargs)
+    def __init__(self, N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn, *args, **kwargs):
+        super(MoleculeGenerator_RNN, self).__init__(N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation, *args,
+                                                    **kwargs)
         self.N_rnn = N_rnn
-
         with self.name_scope():
             self.rnn = gluon.rnn.GRU(hidden_size=self.F_c[-1],
                                      num_layers=self.N_rnn,
@@ -147,80 +128,63 @@ class MoleculeGenerator_RNN(MoleculeGenerator, metaclass=ABCMeta):
 
     def _rnn_train(self, X, NX, NX_rep, graph_to_rnn, rnn_to_graph, NX_cum):
         X_avg = fn.SegmentSumFn(NX_rep, NX.shape[0])(X) / nd.cast(fn.unsqueeze(NX, 1), 'float32')
-        X_curr = nd.take(X, indices=NX_cum-1)
+        X_curr = nd.take(X, indices=NX_cum - 1)
         X = nd.concat(X_avg, X_curr, dim=1)
-
         # rnn
-        X = nd.take(X, indices=graph_to_rnn) # batch_size, iw_size, length, num_features
+        X = nd.take(X, indices=graph_to_rnn)  # batch_size, iw_size, length, num_features
         batch_size, iw_size, length, num_features = X.shape
-        X = X.reshape([batch_size*iw_size, length, num_features])
+        X = X.reshape([batch_size * iw_size, length, num_features])
         X = self.rnn(X)
-
         X = X.reshape([batch_size, iw_size, length, -1])
         X = nd.gather_nd(X, indices=rnn_to_graph)
-
         return X
 
     def _rnn_test(self, X, NX, NX_rep, NX_cum, h):
         # note: one partition for one molecule
         X_avg = fn.SegmentSumFn(NX_rep, NX.shape[0])(X) / nd.cast(fn.unsqueeze(NX, 1), 'float32')
         X_curr = nd.take(X, indices=NX_cum - 1)
-        X = nd.concat(X_avg, X_curr, dim=1) # size: [NX, F_in * 2]
-
+        X = nd.concat(X_avg, X_curr, dim=1)  # size: [NX, F_in * 2]
         # rnn
         X = fn.unsqueeze(X, axis=1)
         X, h = self.rnn(X, h)
-
         X = fn.squeeze(X, axis=1)
         return X, h
 
     def _policy(self, X, A, NX, NX_rep, last_append_mask, graph_to_rnn, rnn_to_graph, NX_cum):
         # get initial embedding
         X = self.embedding_atom(X) + self.embedding_mask(last_append_mask)
-
         # convolution
         X = self._graph_conv_forward(X, A)
-
         # linear
         X = self.dense(X)
-
         # rnn
         X_mol = self._rnn_train(X, NX, NX_rep, graph_to_rnn, rnn_to_graph, NX_cum)
-
         # policy
         append, connect, end = self.policy_h(X, NX, NX_rep, X_mol)
-
         return append, connect, end
 
     def _decode_step(self, X, A, NX, NX_rep, last_append_mask, NX_cum, h):
         # get initial embedding
         X = self.embedding_atom(X) + self.embedding_mask(last_append_mask)
-
         # convolution
         X = self._graph_conv_forward(X, A)
-
         # linear
         X = self.dense(X)
-
         # rnn
         X_mol, h = self._rnn_test(X, NX, NX_rep, NX_cum, h)
-
         # policy
         append, connect, end = self.policy_h(X, NX, NX_rep, X_mol)
-
         return append, connect, end, h
 
     def forward(self, *input):
-        if self.mode=='loss' or self.mode=='likelihood':
-            X, A, iw_ids, last_append_mask, \
-            NX, NX_rep, action_0, actions, log_p, \
-            batch_size, iw_size, \
+        if self.mode == 'loss' or self.mode == 'likelihood':
+            X, A, iw_ids, last_append_mask, NX, NX_rep, action_0, actions, log_p, batch_size, iw_size, \
             graph_to_rnn, rnn_to_graph, NX_cum = input
 
             init = self._policy_0(X.context).tile([batch_size * iw_size, 1])
             append, connect, end = self._policy(X, A, NX, NX_rep, last_append_mask, graph_to_rnn, rnn_to_graph, NX_cum)
             l = self._likelihood(init, append, connect, end, action_0, actions, iw_ids, log_p, batch_size, iw_size)
-            if self.mode=='likelihood':
+            if self.mode == 'likelihood':
                 return l
             else:
                 return -l.mean()
@@ -253,14 +217,9 @@ class _TwoLayerDense(nn.Block):
 
 # Base for molRNN conditional --------------------------------------------
 class CMoleculeGenerator_RNN(MoleculeGenerator_RNN, metaclass=ABCMeta):
-    def __init__(self, N_A, N_B, N_C, D,
-                 F_e, F_skip, F_c, Fh_policy,
-                 activation, N_rnn,
-                 *args, **kwargs):
-        self.N_C = N_C # number of conditional variables
-        super(CMoleculeGenerator_RNN, self).__init__(N_A, N_B, D,
-                                                     F_e, F_skip, F_c, Fh_policy,
-                                                     activation, N_rnn,
+    def __init__(self, N_A, N_B, N_C, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn, *args, **kwargs):
+        self.N_C = N_C  # number of conditional variables
+        super(CMoleculeGenerator_RNN, self).__init__(N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn,
                                                      *args, **kwargs)
         with self.name_scope():
             self.dense_policy_0 = _TwoLayerDense(self.N_C, self.N_A * 3, self.N_A)
@@ -272,61 +231,42 @@ class CMoleculeGenerator_RNN(MoleculeGenerator_RNN, metaclass=ABCMeta):
     def _policy_0(self, c):
         return self.dense_policy_0(c) + 0.0 * self.policy_0.data(c.context)
 
-    def _policy(self, X, A, NX, NX_rep, last_append_mask,
-                graph_to_rnn, rnn_to_graph, NX_cum,
-                c, ids):
+    def _policy(self, X, A, NX, NX_rep, last_append_mask, graph_to_rnn, rnn_to_graph, NX_cum, c, ids):
         # get initial embedding
         X = self.embedding_atom(X) + self.embedding_mask(last_append_mask)
-
         # convolution
         X = self._graph_conv_forward(X, A, c, ids)
-
         # linear
         X = self.dense(X)
-
         # rnn
         X_mol = self._rnn_train(X, NX, NX_rep, graph_to_rnn, rnn_to_graph, NX_cum)
-
         # policy
         append, connect, end = self.policy_h(X, NX, NX_rep, X_mol)
-
         return append, connect, end
 
     def _decode_step(self, X, A, NX, NX_rep, last_append_mask, NX_cum, h, c, ids):
         # get initial embedding
         X = self.embedding_atom(X) + self.embedding_mask(last_append_mask)
-
         # convolution
         X = self._graph_conv_forward(X, A, c, ids)
-
         # linear
         X = self.dense(X)
-
         # rnn
         X_mol, h = self._rnn_test(X, NX, NX_rep, NX_cum, h)
-
         # policy
         append, connect, end = self.policy_h(X, NX, NX_rep, X_mol)
-
         return append, connect, end, h
 
-
     def forward(self, *input):
-        if self.mode=='loss' or self.mode=='likelihood':
-            X, A, iw_ids, last_append_mask, \
-            NX, NX_rep, action_0, actions, log_p, \
-            batch_size, iw_size, \
-            graph_to_rnn, rnn_to_graph, NX_cum, \
-            c, ids = input
+        if self.mode == 'loss' or self.mode == 'likelihood':
+            X, A, iw_ids, last_append_mask, NX, NX_rep, action_0, actions, log_p, batch_size, iw_size, \
+            graph_to_rnn, rnn_to_graph, NX_cum, c, ids = input
 
             init = nd.tile(fn.unsqueeze(self._policy_0(c), axis=1), [1, iw_size, 1])
-            append, connect, end = self._policy(X, A, NX, NX_rep, last_append_mask,
-                                                graph_to_rnn, rnn_to_graph, NX_cum,
+            append, connect, end = self._policy(X, A, NX, NX_rep, last_append_mask, graph_to_rnn, rnn_to_graph, NX_cum,
                                                 c, ids)
-            l = self._likelihood(init, append, connect, end,
-                                 action_0, actions, iw_ids, log_p,
-                                 batch_size, iw_size)
-            if self.mode=='likelihood':
+            l = self._likelihood(init, append, connect, end, action_0, actions, iw_ids, log_p, batch_size, iw_size)
+            if self.mode == 'likelihood':
                 return l
             else:
                 return -l.mean()
@@ -337,6 +277,7 @@ class CMoleculeGenerator_RNN(MoleculeGenerator_RNN, metaclass=ABCMeta):
             return self._decode_step(X, A, NX, NX_rep, last_append_mask, NX_cum, h, c, ids)
         else:
             raise ValueError
+
 
 # MOLMP unconditional ---------------------------------------------------------
 class VanillaMolGen(MoleculeGenerator):
@@ -378,8 +319,7 @@ class VanillaMolGen(MoleculeGenerator):
 class VanillaMolGen_RNN(MoleculeGenerator_RNN):
 
     def __init__(self, N_A, N_B, D, F_e, F_h, F_skip, F_c, Fh_policy, activation, N_rnn):
-        super(VanillaMolGen_RNN, self).__init__(N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn,
-                                                F_h)
+        super(VanillaMolGen_RNN, self).__init__(N_A, N_B, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn, F_h)
 
     def _build_graph_conv(self, F_h):
         self.F_h = list(F_h) if isinstance(F_h, tuple) else F_h
@@ -414,14 +354,9 @@ class VanillaMolGen_RNN(MoleculeGenerator_RNN):
 # Conditional MolRNN
 class CVanillaMolGen_RNN(CMoleculeGenerator_RNN):
 
-    def __init__(self, N_A, N_B, N_C, D,
-                 F_e, F_h, F_skip, F_c, Fh_policy,
-                 activation, N_rnn, rename=False):
+    def __init__(self, N_A, N_B, N_C, D, F_e, F_h, F_skip, F_c, Fh_policy, activation, N_rnn, rename=False):
         self.rename = rename
-        super(CVanillaMolGen_RNN, self).__init__(N_A, N_B, N_C, D,
-                                                 F_e, F_skip, F_c, Fh_policy,
-                                                 activation, N_rnn,
-                                                 F_h)
+        super(CVanillaMolGen_RNN, self).__init__(N_A, N_B, N_C, D, F_e, F_skip, F_c, Fh_policy, activation, N_rnn, F_h)
 
     def _build_graph_conv(self, F_h):
         self.F_h = list(F_h) if isinstance(F_h, tuple) else F_h
@@ -461,5 +396,3 @@ class CVanillaMolGen_RNN(CMoleculeGenerator_RNN):
                 X_out.append(conv(X, A) + linear_c(c)[ids, :])
         X_out = nd.concat(*X_out[1:], dim=1)
         return self.activation(self.linear_skip(self.activation(self.bn_skip(X_out))))
-
-
