@@ -9,8 +9,8 @@ from rdkit import Chem
 from mx_mg.data import get_mol_spec
 from mx_mg import models, data
 
-
 __all__ = ['Builder', 'Vanilla_Builder', 'Vanilla_RNN_Builder', 'CVanilla_RNN_Builder']
+
 
 def _decode_step(X, A, NX, NA, last_action, finished,
                  get_init, get_action,
@@ -154,6 +154,7 @@ def _decode_step(X, A, NX, NA, last_action, finished,
 
         return X, A, NX, NA, last_action, finished
 
+
 class Builder(object, metaclass=ABCMeta):
 
     def __init__(self, model_loc, gpu_id=0):
@@ -163,7 +164,7 @@ class Builder(object, metaclass=ABCMeta):
         self.mdl = self.__class__._get_model(configs)
 
         self.ctx = mx.gpu(gpu_id) if gpu_id is not None else mx.cpu()
-        self.mdl.load_params(os.path.join(model_loc, 'ckpt.params'), ctx=self.ctx)
+        self.mdl.load_parameters(os.path.join(model_loc, 'ckpt.params'), ctx=self.ctx)
 
     @staticmethod
     def _get_model(configs):
@@ -223,7 +224,7 @@ class Vanilla_Builder(Builder):
                                                    cumsum_X_[:-1], cumsum_X_[1:]):
                 graph_list.append([X[cumsum_X_pre:cumsum_X_post], A[cumsum_A_pre:cumsum_A_post, :]])
 
-            if output_type=='graph':
+            if output_type == 'graph':
                 return graph_list
             elif output_type == 'mol':
                 return data.get_mol_from_graph_list(graph_list, sanitize)
@@ -266,7 +267,6 @@ class Vanilla_RNN_Builder(Builder):
     @staticmethod
     def _get_model(configs):
         return models.VanillaMolGen_RNN(get_mol_spec().num_atom_types, get_mol_spec().num_bond_types, D=2, **configs)
-
 
     def sample(self, num_samples, output_type='mol', sanitize=True, random=True):
         with autograd.predict_mode():
@@ -314,7 +314,7 @@ class Vanilla_RNN_Builder(Builder):
                                                    cumsum_X_[:-1], cumsum_X_[1:]):
                 graph_list.append([X[cumsum_X_pre:cumsum_X_post], A[cumsum_A_pre:cumsum_A_post, :]])
 
-            if output_type=='graph':
+            if output_type == 'graph':
                 return graph_list
             elif output_type == 'mol':
                 return data.get_mol_from_graph_list(graph_list, sanitize)
@@ -359,10 +359,9 @@ class CVanilla_RNN_Builder(Builder):
     def _get_model(configs):
         return models.CVanillaMolGen_RNN(get_mol_spec().num_atom_types, get_mol_spec().num_bond_types, D=2, **configs)
 
-
     def sample(self, num_samples, c, output_type='mol', sanitize=True, random=True):
         if len(c.shape) == 1:
-            c = np.stack([c, ]*num_samples, axis=0)
+            c = np.stack([c, ] * num_samples, axis=0)
 
         with autograd.predict_mode():
             # step one
@@ -410,7 +409,7 @@ class CVanilla_RNN_Builder(Builder):
                                                    cumsum_X_[:-1], cumsum_X_[1:]):
                 graph_list.append([X[cumsum_X_pre:cumsum_X_post], A[cumsum_A_pre:cumsum_A_post, :]])
 
-            if output_type=='graph':
+            if output_type == 'graph':
                 return graph_list
             elif output_type == 'mol':
                 return data.get_mol_from_graph_list(graph_list, sanitize)
@@ -447,4 +446,3 @@ class CVanilla_RNN_Builder(Builder):
                 # append to list
                 A_sparse.append(_A_sparse_i)
         return X, A_sparse, NX, NX_rep, mask, NX_cum
-
