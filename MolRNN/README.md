@@ -1,6 +1,10 @@
 # Description of the project
 
-[Project]()
+[Project](https://github.com/EdoardoGruppi/MolRNN)
+
+This project is a reimplementation of the models introduced in the following paper: "Multi-objective de novo drug design with conditional graph generative model" ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)). Specifically, the code is an updated version of that published by the authors in this [repository](https://github.com/kevinid/molecule_generator). The code now works with python 3.6 and also allows those who work on windows to install certain versions of some libraries necessary to run the program. Furthermore, some bugs are also found and solved. Most importantly, the code presented in this project is widely commented to facilitate the reading.
+
+** Important: ** Even if the code presented in this repository is almost entirely based on the code published by the authors in their [repository](https://github.com/kevinid/molecule_generator) the results might differ for some reason. Therefore, for any benchmark test to be performed on the models of the paper, please refer to the original code.
 
 ## How to start
 
@@ -9,29 +13,52 @@ in the Sections below.
 
 ## Setup
 
-1. Install all the packages appointed in
-   the [requirements.txt]() file.
+<!--
+Code converted running the following command on the terminal:
+python -m lib2to3 --output-dir=C:\Users\<user>\<path>\<folder-where-to-save-py3-code> -W -n C:\Users\<user>\<path>\<folder-with-py2-code>
+-->
 
-2. Download the project directory
-   from [GitHub]().
-   
-7. The installation of rdkit needs an additional step. Firstly, run the following line on the terminal:
+1. Download the project directory
+   from [GitHub](https://github.com/EdoardoGruppi/MolRNN).
+
+2. Install all the packages appointed in
+   the [requirements.txt](https://github.com/EdoardoGruppi/MolRNN/blob/main/requirements.txt) file or follow the below steps.
+
+3. Install the correct rdkit version with conda:
+
    ```
-   conda install -c rdkit rdkit
+   conda install -c rdkit rdkit==2018.03.3.0
    ```
-   
+
    **Important:** Finally, since some experimental functions not directly included in the package are used, it is
    necessary to copy and paste the Contrib folder from:
+
    ```
    C:\Users\<'name user'>\anaconda3\pkgs\<'rdkit version'>\Library\share\RDKit
    ```
+
    to:
+
    ```
    C:\Users\<'name user'>\anaconda3\envs\<'name env'>\Lib\site-packages\rdkit
    ```
-   
-3. The project is developed on mxnet 1.3.1 and python 3.6. To work on GPUs you must install both Cuda 9.2 and
-   cudnn 7.6.5.
+
+4. The project is developed on mxnet 1.3.1 and python 3.6. To work on GPUs you must install both Cuda 9.2 and
+   cudnn 7.6.5. You can directly use conda.
+
+5. Install the correct version of mxnet:
+
+   ```
+   pip install mxnet-cu92==1.3.1
+   ```
+
+6. Resolve the dependency conflicts downgrading the versions of some libraries such as pandas and mkl_fft.
+
+7. Install the other packages required if not already installed:
+
+   ```
+   pip install pandas scipy matplotlib networkx protobuf sklearn lmdb pymysql
+   ```
 
 ## Run the code
 
@@ -52,6 +79,16 @@ images as well as to instantiate, train and test the models.
 
 **utilities.py** includes functions to download and split the datasets in the dedicated folder, to compute the mean RGB
 value of the dataset and to plot results.
+
+## Issues
+
+1. The code is focused on testing the MolRNN model. It is thus necessary to add some lines to run the MolMP model.
+
+2. An error occurs when num_workers is greater than zero. Do not change the parameter value to other values.
+
+## References
+
+Li, Yibo, Liangren Zhang, and Zhenming Liu. "Multi-objective de novo drug design with conditional graph generative model." Journal of cheminformatics 10.1 (2018): 1-24.
 
 ## Software used
 
