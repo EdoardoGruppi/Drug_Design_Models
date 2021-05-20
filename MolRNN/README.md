@@ -82,16 +82,18 @@ python main.py
 **main.py** is the starting point of the entire project.
 
 **train.py** defines the order in which instructions are realised. More precisely, it is responsible to call functions
-from other files in order to divide the datasets provided, pre-process data as well as to instantiate, train and test
+from other files in order to divide the datasets provided, pre-process data as well as to instantiate, train and save
 the models.
 
-**test.py** script to test the models already trained and saved.
+**test.py** contains a series of functions useful to test the models already trained and saved.
 
 ## Issues
 
 1. The code is focused on testing the MolRNN model. It is thus necessary to add some lines to run the MolMP model.
 
 2. An error occurs when num_workers is greater than zero. Do not change the parameter value to other values.
+
+3. The project does not consider the testing phase for the scaffold-based conditional MolRNN model.
 
 ## References
 
