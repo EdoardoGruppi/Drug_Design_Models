@@ -7,7 +7,7 @@ params = {'checkpoint_dir': 'checkpoint/mol_rnn', 'is_full': False, 'num_folds':
           'batch_size_test': 10, 'num_workers': 0, 'k': 5, 'p': 0.8, 'embedding_size': 16, 'hidden_sizes': [32, 64],
           'skip_layer_size': 64, 'dense_layer_sizes': [64], 'policy_layers_size': 32, 'rnn_layers': 2,
           'activation': 'relu', 'gpu_ids': [0], 'lr': 0.001, 'decay': 0.01, 'decay_step': 100, 'clip_grad': 3.0,
-          'iterations': 500, 'summary_step': 20, 'file_name': 'datasets/ChEMBL.txt'}
+          'iterations': 180, 'summary_step': 20, 'file_name': 'datasets/ChEMBL.txt'}
 engine(**params)
 # Test the unconditional molRNN
 test_mol_rnn(checkpoint_folder='checkpoint/mol_rnn', num_samples=1000, visualize_samples=12, img_name='image000',
@@ -34,7 +34,7 @@ params = {'cond_type': 'kinase', 'checkpoint_dir': 'checkpoint/ck_mol_rnn', 'is_
           'fold_id': 0, 'batch_size': 10, 'batch_size_test': 10, 'num_workers': 0, 'k': 5, 'p': 0.8,
           'embedding_size': 16, 'hidden_sizes': [32, 64], 'skip_layer_size': 64, 'dense_layer_sizes': [64],
           'policy_layers_size': 32, 'rnn_layers': 2, 'num_scaffolds': 0, 'activation': 'relu', 'gpu_ids': [0],
-          'lr': 0.001, 'decay': 0.01, 'decay_step': 100, 'clip_grad': 3.0, 'iterations': 180, 'summary_step': 20,
+          'lr': 0.001, 'decay': 0.01, 'decay_step': 100, 'clip_grad': 3.0, 'iterations': 200, 'summary_step': 20,
           'file_name': 'datasets/ChEMBL_k.txt'}
 engine_cond(**params)
 # Test the molRNN conditioned on measured activity towards molecules
