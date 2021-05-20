@@ -2,9 +2,17 @@
 
 [Project](https://github.com/EdoardoGruppi/MolRNN)
 
-This project is a reimplementation of the models introduced in the following paper: "Multi-objective de novo drug design with conditional graph generative model" ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)). Specifically, the code is an updated version of that published by the authors in this [repository](https://github.com/kevinid/molecule_generator). The code now works with python 3.6 and also allows those who work on windows to install certain versions of some libraries necessary to run the program. Furthermore, some bugs are also found and solved. Most importantly, the code presented in this project is widely commented to facilitate the reading.
+This project is a reimplementation of the models introduced in the following paper: "Multi-objective de novo drug design
+with conditional graph generative model" ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)).
+Specifically, the code is an updated version of that published by the authors in
+this [repository](https://github.com/kevinid/molecule_generator). The code now works with python 3.6 and also allows
+those who work on windows to install certain versions of some libraries necessary to run the program. Furthermore, some
+bugs are also found and solved. Most importantly, the code presented in this project is widely commented to facilitate
+the reading.
 
-** Important: ** Even if the code presented in this repository is almost entirely based on the code published by the authors in their [repository](https://github.com/kevinid/molecule_generator) the results might differ for some reason. Therefore, for any benchmark test to be performed on the models of the paper, please refer to the original code.
+**Important:** Even if the code presented in this repository is almost entirely based on the code published by the
+authors in their [repository](https://github.com/kevinid/molecule_generator) the results might differ for some reason.
+Therefore, for any benchmark test to be performed on the models of the paper, please refer to the original code.
 
 ## How to start
 
@@ -18,11 +26,11 @@ Code converted running the following command on the terminal:
 python -m lib2to3 --output-dir=C:\Users\<user>\<path>\<folder-where-to-save-py3-code> -W -n C:\Users\<user>\<path>\<folder-with-py2-code>
 -->
 
-1. Download the project directory
-   from [GitHub](https://github.com/EdoardoGruppi/MolRNN).
+1. Download the project directory from [GitHub](https://github.com/EdoardoGruppi/MolRNN).
 
 2. Install all the packages appointed in
-   the [requirements.txt](https://github.com/EdoardoGruppi/MolRNN/blob/main/requirements.txt) file or follow the below steps.
+   the [requirements.txt](https://github.com/EdoardoGruppi/MolRNN/blob/main/requirements.txt) file or follow the below
+   steps.
 
 3. Install the correct rdkit version with conda:
 
@@ -43,8 +51,8 @@ python -m lib2to3 --output-dir=C:\Users\<user>\<path>\<folder-where-to-save-py3-
    C:\Users\<'name user'>\anaconda3\envs\<'name env'>\Lib\site-packages\rdkit
    ```
 
-4. The project is developed on mxnet 1.3.1 and python 3.6. To work on GPUs you must install both Cuda 9.2 and
-   cudnn 7.6.5. You can directly use conda.
+4. The project is developed on mxnet 1.3.1 and python 3.6. To work on GPUs you must install both Cuda 9.2 and cudnn
+   7.6.5. You can directly use conda.
 
 5. Install the correct version of mxnet:
 
@@ -66,19 +74,18 @@ Once all the necessary packages have been installed you can run the code by typi
 specific command within the IDE.
 
 ```
-python train.py
+python main.py
 ```
 
 ## Role of each file
 
-**main.py** is the starting point of the entire project. It defines the order in which instructions are realised. More
-precisely, it is responsible to call functions from other files in order to divide the datasets provided, pre-process
-images as well as to instantiate, train and test the models.
+**main.py** is the starting point of the entire project.
 
-**config.py** makes available all the global variables used in the project.
+**train.py** defines the order in which instructions are realised. More precisely, it is responsible to call functions
+from other files in order to divide the datasets provided, pre-process data as well as to instantiate, train and test
+the models.
 
-**utilities.py** includes functions to download and split the datasets in the dedicated folder, to compute the mean RGB
-value of the dataset and to plot results.
+**test.py** script to test the models already trained and saved.
 
 ## Issues
 
@@ -88,7 +95,8 @@ value of the dataset and to plot results.
 
 ## References
 
-Li, Yibo, Liangren Zhang, and Zhenming Liu. "Multi-objective de novo drug design with conditional graph generative model." Journal of cheminformatics 10.1 (2018): 1-24.
+Li, Yibo, Liangren Zhang, and Zhenming Liu. "Multi-objective de novo drug design with conditional graph generative
+model." Journal of cheminformatics 10.1 (2018): 1-24.
 
 ## Software used
 
