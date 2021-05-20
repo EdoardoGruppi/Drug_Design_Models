@@ -2,8 +2,8 @@ from mxnet.gluon.data import Dataset
 import itertools
 from abc import ABCMeta
 
-
 __all__ = ['IterableDataset', 'KFold', 'Filter', 'Lambda']
+
 
 class IterableDataset(Dataset, metaclass=ABCMeta):
 
@@ -23,11 +23,11 @@ class KFold(IterableDataset):
         self.is_train = is_train
 
         index = list(range(len(self.dataset)))
-        chunk_size = int(float(len(self.dataset))/self.k)
+        chunk_size = int(float(len(self.dataset)) / self.k)
         chunks = []
         for i in range(self.k):
             if i < self.k - 1:
-                chunks.append(index[i * chunk_size:(i + 1)*chunk_size])
+                chunks.append(index[i * chunk_size:(i + 1) * chunk_size])
             else:
                 chunks.append(index[i * chunk_size:])
 

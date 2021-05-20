@@ -10,8 +10,8 @@ import numpy as np
 
 from mx_mg.data import data_struct
 
-
 __all__ = ['get_graph_from_smiles_list', 'get_mol_from_graph', 'get_mol_from_graph_list', 'get_d']
+
 
 def get_graph_from_smiles(smiles):
     mol = Chem.MolFromSmiles(smiles)
@@ -63,13 +63,13 @@ def traverse_graph(graph, atom_ranks, current_node=None, step_ids=None, p=0.9, l
         next_node_ranks = atom_ranks
     else:
         next_nodes = graph.neighbors(current_node)  # get neighbor nodes
-        next_nodes = [n for n in next_nodes if step_ids[n] < 0] # filter visited nodes
-        next_node_ranks = [atom_ranks[n] for n in next_nodes] # get ranks for neighbors
-    next_nodes = [n for n, r in sorted(zip(next_nodes, next_node_ranks), key=lambda _x:_x[1])] # sort by rank
+        next_nodes = [n for n in next_nodes if step_ids[n] < 0]  # filter visited nodes
+        next_node_ranks = [atom_ranks[n] for n in next_nodes]  # get ranks for neighbors
+    next_nodes = [n for n, r in sorted(zip(next_nodes, next_node_ranks), key=lambda _x: _x[1])]  # sort by rank
 
     # iterate through neighbors
     while len(next_nodes) > 0:
-        if len(next_nodes)==1:
+        if len(next_nodes) == 1:
             next_node = next_nodes[0]
         elif random.random() >= (1 - p):
             next_node = next_nodes[0]
@@ -79,7 +79,7 @@ def traverse_graph(graph, atom_ranks, current_node=None, step_ids=None, p=0.9, l
             log_p += np.log((1.0 - p) / (len(next_nodes) - 1))
         step_ids[next_node] = max(step_ids) + 1
         _, log_p = traverse_graph(graph, atom_ranks, next_node, step_ids, p, log_p)
-        next_nodes = [n for n in next_nodes if step_ids[n] < 0] # filter visited nodes
+        next_nodes = [n for n in next_nodes if step_ids[n] < 0]  # filter visited nodes
 
     return step_ids, log_p
 
@@ -100,9 +100,9 @@ def single_reorder(X_0, A_0, step_ids):
     max_b, min_b = np.amax(A_0[:, :2], axis=1), np.amin(A_0[:, :2], axis=1)
     is_append = np.concatenate([np.array([True]), max_b[1:] > max_b[:-1]])
     A_0 = np.concatenate([np.where(is_append[:, np.newaxis],
-                                 np.stack([min_b, max_b], axis=1),
-                                 np.stack([max_b, min_b], axis=1)),
-                        A_0[:, -1:]], axis=1)
+                                   np.stack([min_b, max_b], axis=1),
+                                   np.stack([max_b, min_b], axis=1)),
+                          A_0[:, -1:]], axis=1)
 
     return X_0, A_0
 
@@ -135,8 +135,6 @@ def single_expand(X_0, A_0):
     actions = np.append(actions, last_action, axis=0)
 
     action_0 = np.array([X_0[0]], dtype=np.int32)
-
-    # }}}
 
     # {{{ Get mask
     last_atom_index = shift + NX - 1
@@ -212,12 +210,13 @@ def merge_single(X, A,
     mol_ids_rep = np.repeat(mol_ids, NX)
     rep_ids_rep = np.repeat(rep_ids, NX)
 
-    return X, A,\
-           mol_ids_rep, rep_ids_rep, iw_ids,\
-           last_append_mask,\
-           NX, NX_rep,\
+    return X, A, \
+           mol_ids_rep, rep_ids_rep, iw_ids, \
+           last_append_mask, \
+           NX, NX_rep, \
            action_0, actions, \
            log_p
+
 
 def process_single(smiles, k, p):
     graph, atom_types, atom_ranks, bonds, bond_types = get_graph_from_smiles(smiles)
@@ -258,15 +257,15 @@ def process_single(smiles, k, p):
 
     # concatenate
     X = np.concatenate(X, axis=0)
-    A = np.concatenate(A, axis = 0)
-    NX = np.concatenate(NX, axis = 0)
-    NA = np.concatenate(NA, axis = 0)
-    action_0 = np.concatenate(action_0, axis = 0)
-    actions = np.concatenate(actions, axis = 0)
-    last_append_mask = np.concatenate(last_append_mask, axis = 0)
-    mol_ids = np.concatenate(mol_ids, axis = 0)
-    rep_ids = np.concatenate(rep_ids, axis = 0)
-    iw_ids = np.concatenate(iw_ids, axis = 0)
+    A = np.concatenate(A, axis=0)
+    NX = np.concatenate(NX, axis=0)
+    NA = np.concatenate(NA, axis=0)
+    action_0 = np.concatenate(action_0, axis=0)
+    actions = np.concatenate(actions, axis=0)
+    last_append_mask = np.concatenate(last_append_mask, axis=0)
+    mol_ids = np.concatenate(mol_ids, axis=0)
+    rep_ids = np.concatenate(rep_ids, axis=0)
+    iw_ids = np.concatenate(iw_ids, axis=0)
     log_p = np.array(log_p, dtype=np.float32)
 
     return X, A, NX, NA, mol_ids, rep_ids, iw_ids, action_0, actions, last_append_mask, log_p
@@ -296,8 +295,7 @@ def get_mol_from_graph(X, A, sanitize=True):
     else:
         return mol
 
+
 def get_mol_from_graph_list(graph_list, sanitize=True):
     mol_list = [get_mol_from_graph(X, A, sanitize) for X, A in graph_list]
     return mol_list
-
-

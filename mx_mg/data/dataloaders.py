@@ -1,9 +1,9 @@
+# Import packages
 import numpy as np
 import mxnet as mx
 from mxnet import nd
 from mxnet.gluon.data import DataLoader
 from rdkit import Chem
-
 from . import utils
 from mx_mg.data import data_struct
 
@@ -11,29 +11,44 @@ __all__ = ['MolLoader', 'MolRNNLoader', 'CMolRNNLoader']
 
 
 class MolLoader(DataLoader):
-    """Load graph based molecule representation from SMILES"""
+    def __init__(self, dataset, batch_size=10, num_workers=0, k=10, p=0.9, shuffle=False, sampler=None,
+                 batch_sampler=None):
+        """
+        Load graph based molecule representation from SMILES. In general, a mxnet DataLoader objects loads data from
+        a dataset and returns mini-batches of data.
 
-    def __init__(self, dataset, batch_size=10, num_workers=0,
-                 k=10, p=0.9, shuffle=False, sampler=None, batch_sampler=None):
+        :param dataset: dataset to process.
+        :param batch_size:  mini-batch size for training, default to 10.
+        :param num_workers: number of worker for data processing, default to 0
+        :param k: Number of decoding route used, default to 5
+        :param p: Parameter controlling the randomness of importance sampling. Alpha in the literature.
+        :param shuffle: boolean. If True the data is shuffled.
+        :param sampler: the sampler to use.
+        :param batch_sampler: a sampler that returns mini-batches.
+        :return:
+        """
         self.k = k
         self.p = p
 
-        # batch_sampler, sampler and shuffle are mutually exclusive
+        # Batch_sampler, Sampler and Shuffle are mutually exclusive. According to the argument values there are three
+        # possible cases.
         if batch_sampler is not None:
             super(MolLoader, self).__init__(dataset, batch_sampler=batch_sampler,
                                             num_workers=num_workers, batchify_fn=self._collate_fn)
         elif sampler is not None:
-            super(MolLoader, self).__init__(dataset, sampler=sampler,
-                                            num_workers=num_workers, batchify_fn=self._collate_fn,
-                                            last_batch='rollover')
+            super(MolLoader, self).__init__(dataset, sampler=sampler, num_workers=num_workers,
+                                            batchify_fn=self._collate_fn, last_batch='rollover')
         else:
-            super(MolLoader, self).__init__(dataset, batch_size, shuffle=shuffle,
-                                            num_workers=num_workers, batchify_fn=self._collate_fn,
-                                            last_batch='rollover')
+            super(MolLoader, self).__init__(dataset, batch_size, shuffle=shuffle, num_workers=num_workers,
+                                            batchify_fn=self._collate_fn, last_batch='rollover')
 
     def _collate_fn(self, batch):
-        # names = X, A, NX, NA, mol_ids, rep_ids, iw_ids, action_0, actions, last_append_mask, log_p
+        """
+        A callback function that allow users to specify how to merge samples into a batch.
 
+        :param batch: samples contained in a batch.
+        :return:
+        """
         shapes = [[0], [0, 3], [0], [0], [0], [0], [0], [0], [0, 5], [0], [0]]
         dtypes = [np.int32, np.int32, np.int32, np.int32, np.int32, np.int32, np.int32, np.int32, np.int32, np.int32,
                   np.float32]
@@ -45,8 +60,9 @@ class MolLoader(DataLoader):
 
         for i, record_in in enumerate(batch):
             smiles = record_in
-            X_i, A_i, NX_i, NA_i, mol_ids_i, rep_ids_i, iw_ids_i, action_0_i, actions_i, last_append_mask_i, \
-            log_p_i = utils.process_single(smiles, self.k, self.p)
+            X_i, A_i, NX_i, NA_i, mol_ids_i, rep_ids_i, iw_ids_i, \
+            action_0_i, actions_i, last_append_mask_i, log_p_i = utils.process_single(smiles, self.k, self.p)
+
             if i != 0:
                 mol_ids_i += mol_ids[-1] + 1
                 iw_ids_i += iw_ids[-1] + 1
@@ -63,12 +79,7 @@ class MolLoader(DataLoader):
     @staticmethod
     def from_numpy_to_tensor(record, device_id):
         """Convert numpy to tensor and place it to a specific device"""
-        [X, A,
-         mol_ids_rep, rep_ids_rep, iw_ids,
-         last_append_mask,
-         NX, NX_rep,
-         action_0, actions,
-         log_p] = record
+        [X, A, mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX, NX_rep, action_0, actions, log_p] = record
 
         X = nd.array(X, ctx=mx.gpu(device_id), dtype='int32')
         A_sparse = []
@@ -78,31 +89,21 @@ class MolLoader(DataLoader):
             else:
                 # transpose may not be supported in gpu
                 A_i = np.concatenate([A_i, A_i[:, [1, 0]]], axis=0)
-
                 # construct csr matrix ...
                 data = np.ones((A_i.shape[0],), dtype=np.float32)
                 row, col = A_i[:, 0], A_i[:, 1]
-                A_sparse_i = nd.sparse.csr_matrix((data, (row, col)),
-                                                  shape=tuple([int(X.shape[0]), ] * 2),
-                                                  ctx=mx.gpu(device_id),
-                                                  dtype='float32')
-
+                A_sparse_i = nd.sparse.csr_matrix((data, (row, col)), shape=tuple([int(X.shape[0]), ] * 2),
+                                                  ctx=mx.gpu(device_id), dtype='float32')
                 # append to list
                 A_sparse.append(A_sparse_i)
 
         batch_size, iw_size = np.asscalar(mol_ids_rep.max() + 1), np.asscalar(rep_ids_rep.max() + 1)
-
         mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX, NX_rep, action_0, actions = [
             nd.array(_x, ctx=mx.gpu(device_id), dtype='int32')
-            for _x in [mol_ids_rep, rep_ids_rep, iw_ids,
-                       last_append_mask,
-                       NX, NX_rep, action_0, actions]]
+            for _x in [mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX, NX_rep, action_0, actions]]
 
         log_p = nd.array(log_p, ctx=mx.gpu(device_id), dtype='float32')
-
-        record = [X, A_sparse, iw_ids, last_append_mask,
-                  NX, NX_rep, action_0, actions, log_p,
-                  batch_size, iw_size]
+        record = [X, A_sparse, iw_ids, last_append_mask, NX, NX_rep, action_0, actions, log_p, batch_size, iw_size]
 
         return record
 
@@ -144,13 +145,11 @@ class MolRNNLoader(MolLoader):
         output = MolLoader.from_numpy_to_tensor([X, A, mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX, NX_rep,
                                                  action_0, actions, log_p], device_id)
 
-        graph_to_rnn, rnn_to_graph, NX_cum = \
-            nd.array(graph_to_rnn, ctx=mx.gpu(device_id), dtype='int32'), \
-            nd.array(rnn_to_graph, ctx=mx.gpu(device_id), dtype='int32'), \
-            nd.array(NX_cum, ctx=mx.gpu(device_id), dtype='int32')
+        graph_to_rnn, rnn_to_graph, NX_cum = nd.array(graph_to_rnn, ctx=mx.gpu(device_id), dtype='int32'), \
+                                             nd.array(rnn_to_graph, ctx=mx.gpu(device_id), dtype='int32'), \
+                                             nd.array(NX_cum, ctx=mx.gpu(device_id), dtype='int32')
 
         output = output + [graph_to_rnn, rnn_to_graph, NX_cum]
-
         return output
 
 
@@ -160,15 +159,12 @@ class CMolRNNLoader(MolRNNLoader):
                  k=10, p=0.9, shuffle=False, sampler=None, batch_sampler=None,
                  conditional=None):
         if conditional is None:
-            raise ValueError('Conditional function is not set, '
-                             'use unconditional version instead')
+            raise ValueError('Conditional function is not set, use unconditional version instead')
         if not callable(conditional):
             raise TypeError('Provided condition is not callable')
 
         self.conditional = conditional
-
-        super(CMolRNNLoader, self).__init__(dataset, batch_size, num_workers,
-                                            k, p, shuffle, sampler, batch_sampler)
+        super(CMolRNNLoader, self).__init__(dataset, batch_size, num_workers, k, p, shuffle, sampler, batch_sampler)
 
     def _collate_fn(self, batch):
         smiles_list, c = [], []
@@ -185,27 +181,13 @@ class CMolRNNLoader(MolRNNLoader):
 
     @staticmethod
     def from_numpy_to_tensor(record, device_id):
-        [X, A,
-         mol_ids_rep, rep_ids_rep, iw_ids,
-         last_append_mask,
-         NX, NX_rep,
-         action_0, actions,
-         log_p,
-         graph_to_rnn, rnn_to_graph, NX_cum,
-         c] = record
+        [X, A, mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX, NX_rep, action_0, actions, log_p, graph_to_rnn,
+         rnn_to_graph, NX_cum, c] = record
 
-        output = MolRNNLoader.from_numpy_to_tensor([X, A,
-                                                    mol_ids_rep, rep_ids_rep, iw_ids,
-                                                    last_append_mask,
-                                                    NX, NX_rep,
-                                                    action_0, actions,
-                                                    log_p,
-                                                    graph_to_rnn, rnn_to_graph, NX_cum],
-                                                   device_id)
+        output = MolRNNLoader.from_numpy_to_tensor([X, A, mol_ids_rep, rep_ids_rep, iw_ids, last_append_mask, NX,
+                                                    NX_rep, action_0, actions, log_p, graph_to_rnn, rnn_to_graph,
+                                                    NX_cum], device_id)
         ids = nd.array(mol_ids_rep, ctx=mx.gpu(device_id), dtype='int32')
-
         c = nd.array(c, ctx=mx.gpu(device_id), dtype='float32')
-
         output = output + [c, ids]
-
         return output

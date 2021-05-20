@@ -1,7 +1,7 @@
 from rdkit import Chem
 
-
 __all__ = ['MoleculeSpec', 'get_mol_spec']
+
 
 class MoleculeSpec(object):
 
@@ -47,7 +47,9 @@ class MoleculeSpec(object):
     def num_bond_types(self):
         return len(self.bond_orders)
 
+
 _mol_spec = None
+
 
 def get_mol_spec():
     global _mol_spec
