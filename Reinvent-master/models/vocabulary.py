@@ -125,6 +125,11 @@ def create_vocabulary(smiles_list, tokenizer):
     for smi in smiles_list:
         tokens.update(tokenizer.tokenize(smi, with_begin_and_end=False))
 
+    tokens.update(['[2H]', '-', '[cH-]'])
+
     vocabulary = Vocabulary()
-    vocabulary.update(["$", "^"] + sorted(tokens))  # end token is 0 (also counts as padding)
+    # end token is 0 (also counts as padding)
+    vocabulary.update(["$", "^"] + sorted(tokens))
+    print(Vocabulary.tokens(vocabulary))
+
     return vocabulary
