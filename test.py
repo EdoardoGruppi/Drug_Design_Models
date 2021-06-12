@@ -4,7 +4,7 @@ from rdkit.Chem import Draw
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-from rdkit.Contrib.SA_Score import sascorer
+from Contrib.SA_Score import sascorer
 from rdkit.Chem import QED
 import os
 
@@ -65,10 +65,16 @@ def test_mol_rnn(checkpoint_folder='checkpoint/mol_rnn/', num_samples=1000, visu
     :param plot: boolean, if True the image is also shown.
     :return:
     """
+    model_file = os.path.join(checkpoint_folder, 'generated_molecules.txt')
     # Load the pre-trained model
     mol_rnn = builders.Vanilla_RNN_Builder(checkpoint_folder, gpu_id=0)
     # Generate new molecules
     samples_mol_rnn = [mol for mol in mol_rnn.sample(num_samples) if mol is not None]
+    # Convert the molecules into smiles strings
+    smiles_list = [Chem.MolToSmiles(mol) for mol in samples_mol_rnn]
+    with open(model_file, 'w') as f:
+        for smiles in smiles_list:
+            f.write(smiles + '\n')
     # Shuffle the list of molecules generated
     random.shuffle(samples_mol_rnn)
     # Visualize some of the new molecules
@@ -90,12 +96,14 @@ def test_cond_mol_rnn(conditional_codes, checkpoint_folder='checkpoint/cp_mol_rn
     :param legend: image legends. If equal to 'prop' the QED and SA scores are plotted as well.
     :return:
     """
+    model_file = os.path.join(checkpoint_folder, 'generated_molecules.txt')
     conditional_codes = np.array(conditional_codes, dtype=np.float32)
     sectors = conditional_codes.shape[0]
     # Load the conditional MolRNN model
     model = builders.CVanilla_RNN_Builder(checkpoint_folder, gpu_id=0)
     # Sample the results
     prop_outputs = []
+    f = open(model_file, 'w')
     for num in range(sectors):
         # For each sector of values save the results as a list of molecules
         samples_num = [mol for mol in model.sample(num_samples, c=conditional_codes[num, :], output_type='mol') if
@@ -103,12 +111,16 @@ def test_cond_mol_rnn(conditional_codes, checkpoint_folder='checkpoint/cp_mol_rn
         # Convert the molecules into smiles strings
         smiles_list = [Chem.MolToSmiles(mol) for mol in samples_num]
         # Remove all the duplicates
-        smiles_list = list(set(smiles_list))
+        smiles_set = list(set(smiles_list))
         # Convert back the strings into mol objects
-        samples_num = [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
+        samples_num = [Chem.MolFromSmiles(smiles) for smiles in smiles_set]
         # Shuffle the list of molecules and append it to the dedicated list
         random.shuffle(samples_num)
         prop_outputs.append(samples_num)
+
+        for smiles in smiles_list:
+            f.write(smiles + '\n')
+    f.close()
     # For every list of results related to each sector display the achieved molecules
     for num in range(sectors):
         visualize_molecules_cond(prop_outputs[num], visualize_samples, img_name=img_name + str(num),
