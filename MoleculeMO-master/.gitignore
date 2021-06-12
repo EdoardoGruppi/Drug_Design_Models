@@ -1,0 +1,18 @@
+.idea
+
+Model/*
+!Model/Checkpoints.md
+
+Datasets/*
+!Datasets/Datasets.md
+hgraph/__pycache__
+train_processed/*
+!train_processed/Train Preprocessed.md
+
+Modules/__pycache__
+
+Results/*
+!Results/Results.md
+
+Vocab/*
+!Vocab/Vocab.md

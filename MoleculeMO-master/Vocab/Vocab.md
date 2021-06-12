@@ -1,0 +1,1 @@
+The folder is aimed to contain the vocabulary created for training and testing the model.

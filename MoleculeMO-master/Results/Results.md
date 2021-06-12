@@ -1,0 +1,1 @@
+The folder is aimed to contain the results obtained from the model.
