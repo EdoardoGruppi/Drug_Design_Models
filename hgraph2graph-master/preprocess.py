@@ -9,7 +9,8 @@ from pathlib import Path
 from hgraph import MolGraph, common_atom_vocab, PairVocab
 import rdkit
 import os
-from tqdm.contrib.concurrent import process_map
+from tqdm.contrib.concurrent import process_map 
+import gc
 
 
 def to_numpy(tensors):
@@ -117,7 +118,6 @@ if __name__ == "__main__":
         batches = [data[i: i + args.batch_size] for i in range(0, len(data), args.batch_size)]
         func = partial(tensorize, vocab=args.vocab)
 
-        # all_data = process_map(func, batches)
         le = 1000
         num_splits = max(math.ceil(len(batches) / le), 1)
 
@@ -130,3 +130,15 @@ if __name__ == "__main__":
             with open(os.path.join(args.folder, 'tensors-%d.pkl' % split_id), 'wb') as f:
                 pickle.dump(sub_data, f, pickle.HIGHEST_PROTOCOL)
                 print('tensors-%d.pkl' % split_id)
+
+            del sub_data
+            gc.collect()
+
+
+
+
+
+
+
+
+
