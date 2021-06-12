@@ -10,6 +10,7 @@ from collections import deque
 from tensorboardX import SummaryWriter
 from baselines.ppo1.gcn_policy import discriminator, discriminator_net
 import os
+import re
 import copy
 
 
@@ -244,6 +245,15 @@ def learn(args, env, policy_fn, *,
     meanent = tf.reduce_mean(ent)
     pol_entpen = (-entcoeff) * meanent
 
+    
+    def time_elapsed(start_time):
+        elapsed = time.time() - start_time
+        hours = int(elapsed / 3600)
+        minutes = int(int(elapsed / 60) % 60)
+        seconds = int(elapsed % 60)
+        return hours, minutes, seconds
+
+
     pi_logp = pi.pd.logp(ac)
     oldpi_logp = oldpi.pd.logp(ac)
     ratio_log = pi.pd.logp(ac) - oldpi.pd.logp(ac)
@@ -391,8 +401,25 @@ def learn(args, env, policy_fn, *,
             saver.restore(sess, fname)
             iters_so_far = int(fname.split('_')[-1]) + 1
             print('model restored!', fname, 'iters_so_far:', iters_so_far)
+
+            # load the last record values saved in the log.out file
+            with open('./ckpt/log.out') as f:
+                records = f.readlines()
+            # The records[-1] is the string: 'Finished Training!' unless an error occurred.
+            final_record = records[-1]
+            # Each line in the log.out file contains: the step number, the time spent (min), the loss and the lr values
+            # Retrieve the last step number and time recorded.
+            t_final = final_record.split('|')[1]
+            t_final = [int(item) for item in re.findall('(.*?)h(.*?)m(.*?)s', t_final)[0]]
+            t_final = t_final[0] * 3600 + t_final[1] * 60 + t_final[2]
+            tstart = time.time() - t_final
+            file_out = open('./ckpt/log.out', 'a')
         except:
             print(fname, 'ckpt not found, start with iters 0')
+            file_out = open('./ckpt/log.out', 'w')
+            file_out.write('{:<10} | {:<20} | {:<10} | {:<10} | {:<10} | {:<10} | {:<20}'.format('Iters', \
+            'Time elapsed', 'Loss Exp.', 'Loss Dis.', "EpLenMean", "EpRewMean", 'Dataset') + '\n' + '--' * 50 + '\n')
+            file_out.flush()
 
     U.initialize()
     adam_pi.sync()
@@ -578,6 +605,10 @@ def learn(args, env, policy_fn, *,
             writer.add_scalar("EpRewFinalMean", np.mean(rewbuffer_final), iters_so_far)
             writer.add_scalar("EpRewFinalStatMean", np.mean(rewbuffer_final_stat), iters_so_far)
             writer.add_scalar("EpThisIter", len(lens), iters_so_far)
+            print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
+                "Iters", iters_so_far, "EpLenMean", np.mean(lenbuffer), "EpRewMean", np.mean(rewbuffer)
+            ))
+
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
         # logger.record_tabular("EpisodesSoFar", episodes_so_far)
@@ -587,16 +618,26 @@ def learn(args, env, policy_fn, *,
             writer.add_scalar("EpisodesSoFar", episodes_so_far, iters_so_far)
             writer.add_scalar("TimestepsSoFar", timesteps_so_far, iters_so_far)
             writer.add_scalar("TimeElapsed", time.time() - tstart, iters_so_far)
+            hours, minutes, seconds = time_elapsed(tstart)
+            time_passed = f"{hours:03d} h {minutes:02d} m {seconds:02d} s"
+            print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
+                "EpisodesSoFar", episodes_so_far, "TimestepsSoFar", timesteps_so_far, "TimeElapsed", time_passed
+                ))
 
         if MPI.COMM_WORLD.Get_rank() == 0:
             with open('molecule_gen/' + args.name_full + '.csv', 'a') as f:
                 f.write('***** Iteration {} *****\n'.format(iters_so_far))
+                print('***** Iteration {} *****\n'.format(iters_so_far))
             # save
             if iters_so_far % args.save_every == 0:
                 fname = './ckpt/' + args.name_full + '_' + str(iters_so_far)
                 saver = tf.compat.v1.train.Saver(var_list_pi)
                 saver.save(tf.compat.v1.get_default_session(), fname)
                 print('model saved!', fname)
+
+                file_out.write('{:10d} | {:20} | {:10.3f} | {:10.3f} | {:10.3f} | {:10.3f} | {:20}\n'.format(iters_so_far, \
+                        time_passed, loss_expert, loss_d_final, np.mean(lenbuffer), np.mean(rewbuffer), args.dataset))
+                file_out.flush()
                 # fname = os.path.join(ckpt_dir, task_name)
                 # os.makedirs(os.path.dirname(fname), exist_ok=True)
                 # saver = tf.train.Saver()
@@ -606,7 +647,9 @@ def learn(args, env, policy_fn, *,
         counter += 1
         if counter % args.curriculum_step and counter // args.curriculum_step < args.curriculum_num:
             level += 1
+    file_out.close()
 
 
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]
+
