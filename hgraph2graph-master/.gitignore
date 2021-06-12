@@ -1,0 +1,19 @@
+*.pyc
+*model.iter*
+data/
+*LOG*
+results*
+model.*
+splits/
+*.pkl
+
+.idea
+
+data/*
+!data/Datasets.md
+ckpt/*
+!ckpt/Checkpoints.md
+hgraph/__pycache__
+train_processed/*
+!train_processed/Train Preprocessed.md
+

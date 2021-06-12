@@ -1,0 +1,2 @@
+The folder is aimed to contain the checkpoints saved during the training of the model.
+A model pre-trained on the chembl dataset can be found inside the official [repository](https://github.com/wengong-jin/hgraph2graph).
