@@ -1,0 +1,22 @@
+{
+  "version": "2.0",
+  "run_type": "create_model",
+  "parameters": {
+    "output_model_path": "data/new_model.ckpt",
+    "input_smiles_path": "data/miniChembl.filtered.smi",
+    "num_layers": 3,
+    "layer_size": 512,
+    "cell_type": "lstm",
+    "embedding_layer_size": 256,
+    "dropout": 0,
+    "max_sequence_length": 256,
+    "layer_normalization": false,
+    "standardize": 0
+  },
+  "logging": {
+    "sender": "this is relevant for remote job submission scenario",
+    "recipient": "local",
+    "logging_path": "Results/logging/progress.log",
+    "job_name": "new_model"
+  }
+}

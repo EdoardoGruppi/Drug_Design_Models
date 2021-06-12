@@ -1,0 +1,28 @@
+__pycache__
+*.pyc
+package.json
+.vscode
+tags
+.idea
+
+/configs/config.json
+
+# Coverage.py output
+.coverage
+htmlcov/
+
+# Python memory_profiler output
+mprofile_*.dat
+
+__pycache__
+data/*
+!data/examples
+!data/Datasets.md
+models/__pycache__
+configurations/__pycache__
+scaffold/__pycache__
+scoring/__pycache__
+utils/__pycache__
+
+Results/*
+!Results/Results.md
