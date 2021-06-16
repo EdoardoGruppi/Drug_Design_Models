@@ -6,7 +6,7 @@ This project is a reimplementation of the models introduced in the following pap
 
 2. "REINVENT 2.0: An AI Tool for De Novo Drug Design." ([paper](https://pubs.acs.org/doi/full/10.1021/acs.jcim.0c00915)). [Official GitHub repository](https://github.com/MolecularAI/Reinvent/tree/master/data).
 
-3. "Hierarchical generation of molecular graphs using structural motifs." ([paper](https://arxiv.org/pdf/2002.03230.pdf)). [repository](https://github.com/wengong-jin/hgraph2graph)
+3. "Hierarchical generation of molecular graphs using structural motifs." ([paper](https://arxiv.org/pdf/2002.03230.pdf)). [Official GitHub repository](https://github.com/wengong-jin/hgraph2graph)
 
 Specifically, the code is a slightly updated version of that published by the authors in their projects.
 
