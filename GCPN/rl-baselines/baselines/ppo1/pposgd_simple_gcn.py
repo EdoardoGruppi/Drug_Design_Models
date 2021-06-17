@@ -410,10 +410,12 @@ def learn(args, env, policy_fn, *,
             # Each line in the log.out file contains: the step number, the time spent (min), the loss and the lr values
             # Retrieve the last step number and time recorded.
             t_final = final_record.split('|')[1]
+            print(t_final)
             t_final = [int(item) for item in re.findall('(.*?)h(.*?)m(.*?)s', t_final)[0]]
             t_final = t_final[0] * 3600 + t_final[1] * 60 + t_final[2]
             tstart = time.time() - t_final
             file_out = open('./ckpt/log.out', 'a')
+            print('Reporting on ./ckpt/log.out')
         except:
             print(fname, 'ckpt not found, start with iters 0')
             file_out = open('./ckpt/log.out', 'w')
@@ -433,12 +435,16 @@ def learn(args, env, policy_fn, *,
     while True:
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
+            print('Interrupting training for timesteps_so_far >= max_timesteps')
             break
         elif max_episodes and episodes_so_far >= max_episodes:
+            print('Interrupting training for episodes_so_far >= max_episodes')
             break
         elif max_iters and iters_so_far >= max_iters:
+            print('Interrupting training for iters_so_far >= max_iters')
             break
         elif max_seconds and time.time() - tstart >= max_seconds:
+            print('Interrupting training for time.time() - tstart >= max_seconds')
             break
 
         if schedule == 'constant':
@@ -605,9 +611,9 @@ def learn(args, env, policy_fn, *,
             writer.add_scalar("EpRewFinalMean", np.mean(rewbuffer_final), iters_so_far)
             writer.add_scalar("EpRewFinalStatMean", np.mean(rewbuffer_final_stat), iters_so_far)
             writer.add_scalar("EpThisIter", len(lens), iters_so_far)
-            print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
-                "Iters", iters_so_far, "EpLenMean", np.mean(lenbuffer), "EpRewMean", np.mean(rewbuffer)
-            ))
+            # print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
+            #     "Iters", iters_so_far, "EpLenMean", np.mean(lenbuffer), "EpRewMean", np.mean(rewbuffer)
+            # ))
 
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
@@ -620,14 +626,14 @@ def learn(args, env, policy_fn, *,
             writer.add_scalar("TimeElapsed", time.time() - tstart, iters_so_far)
             hours, minutes, seconds = time_elapsed(tstart)
             time_passed = f"{hours:03d} h {minutes:02d} m {seconds:02d} s"
-            print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
-                "EpisodesSoFar", episodes_so_far, "TimestepsSoFar", timesteps_so_far, "TimeElapsed", time_passed
-                ))
+            # print('{:10}: {} \n{:10}: {} \n{:10}: {}'.format(
+            #     "EpisodesSoFar", episodes_so_far, "TimestepsSoFar", timesteps_so_far, "TimeElapsed", time_passed
+            #     ))
 
         if MPI.COMM_WORLD.Get_rank() == 0:
             with open('molecule_gen/' + args.name_full + '.csv', 'a') as f:
                 f.write('***** Iteration {} *****\n'.format(iters_so_far))
-                print('***** Iteration {} *****\n'.format(iters_so_far))
+                print('Iteration: {}\n'.format(iters_so_far), end='\r')
             # save
             if iters_so_far % args.save_every == 0:
                 fname = './ckpt/' + args.name_full + '_' + str(iters_so_far)
@@ -635,6 +641,8 @@ def learn(args, env, policy_fn, *,
                 saver.save(tf.compat.v1.get_default_session(), fname)
                 print('model saved!', fname)
 
+                print('{:10d} | {:20} | {:10.3f} | {:10.3f} | {:10.3f} | {:10.3f} | {:20}\n'.format(iters_so_far, \
+                        time_passed, loss_expert, loss_d_final, np.mean(lenbuffer), np.mean(rewbuffer), args.dataset))
                 file_out.write('{:10d} | {:20} | {:10.3f} | {:10.3f} | {:10.3f} | {:10.3f} | {:20}\n'.format(iters_so_far, \
                         time_passed, loss_expert, loss_d_final, np.mean(lenbuffer), np.mean(rewbuffer), args.dataset))
                 file_out.flush()
