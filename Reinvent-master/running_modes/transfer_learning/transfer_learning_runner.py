@@ -32,6 +32,7 @@ class TransferLearningRunner:
 
         for epoch in range(self._config.starting_epoch, last_epoch + 1):
             if not self._adaptive_learning_rate.learning_rate_is_valid():
+                print(f'Condition for concluding training: {not self._adaptive_learning_rate.learning_rate_is_valid()}')
                 break
             self._train_epoch(epoch, self._config.input_smiles_path)
         
@@ -39,11 +40,13 @@ class TransferLearningRunner:
 
         if self._config.save_every_n_epochs == 0 or (
                 self._config.save_every_n_epochs != 1 and last_epoch % self._config.save_every_n_epochs > 0):
-            self._save_model(last_epoch)
+        #     self._save_model(last_epoch)
             self._adaptive_learning_rate.log_out_inputs()
 
     def _train_epoch(self, epoch, training_set_path):
+        print(f'Pre-Processing for epoch {epoch}...')
         data_loader = self._initialize_dataloader(training_set_path)
+        print(f'Training epoch {epoch}...')
         for _, batch in enumerate(self._progress_bar(data_loader, total=len(data_loader))):
             input_vectors = batch.long()
             loss = self._calculate_loss(input_vectors)
@@ -119,6 +122,7 @@ class TransferLearningRunner:
             self.t0 = time.time() - t_final
             print(os.path.join(path, 'log.out'))
             out_file = open(os.path.join(path, 'log.out'), 'a')
+            print('The history file has been correctly opened.')
             return int(model_name.split('.')[-1]) + 1, out_file
         except:
             self.t0 = time.time()
