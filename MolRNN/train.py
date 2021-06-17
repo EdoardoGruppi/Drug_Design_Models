@@ -16,7 +16,7 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
            fold_id=0, batch_size=50, batch_size_test=100, num_workers=0, k=5, p=0.8, embedding_size=16,
            hidden_sizes=(32, 64, 128, 128, 256, 256), skip_layer_size=256, dense_layer_sizes=(512,),
            policy_layers_size=128, activation='relu', rnn_layers=3, gpu_ids=(0, 1), lr=1e-3, decay=0.01,
-           decay_step=100, clip_grad=3.0, iterations=30000, summary_step=200):
+           decay_step=100, clip_grad=3.0, iterations=30000, summary_step=200, steps_per_epoch=1000):
     """
     Prepares the data from the given file, train the described model and saves it into the chosen folder. The model
     created by this function is the unconditional molRnn architecture.
@@ -114,6 +114,7 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
     if not is_continuous:
         t0 = time.time()
         global_counter = 0
+        epoch = 0
     else:
         # load the last record values saved in the log.out file
         with open(os.path.join(checkpoint_dir, 'log.out')) as f:
@@ -125,23 +126,20 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
         count, t_final = int(final_record.split('|')[0]), str(final_record.split('|')[1])
         t_final = [int(item) for item in re.findall('(.*?)h(.*?)m(.*?)s', t_final)[0]]
         t_final = t_final[0] * 3600 + t_final[1] * 60 + t_final[2]
-
         # Code line to stat the time from the last saved value. t0 is expressed in seconds.
         t0 = time.time() - t_final
         # Code line to stat the step count from the last saved value.
         global_counter = count
+        epoch = global_counter // steps_per_epoch
 
     # Open the log.out file in different modes according if it has been already created
     with open(os.path.join(checkpoint_dir, 'log.out'), mode='w' if not is_continuous else 'a') as f:
         if not is_continuous:
             # If not initialise the table with the name of the columns
-            f.write('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR',
-                                                                                 'Batch size',
-                                                                                 'Dataset') + '\n' + '--' * 50 + '\n')
+            f.write('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR', 'Batch size', 'Dataset') + '\n' + '--' * 50 + '\n')
         # Perform a training step until required
-        print('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR',
-                                                                           'Batch size', 'Dataset') + '\n' + '--' * 50)
-        while True and (global_counter < iterations):
+        print('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR', 'Batch size', 'Dataset') + '\n' + '--' * 50)
+        while global_counter < iterations:
             global_counter += 1
             # Load a batch of input data for each GPUs available
             try:
@@ -204,26 +202,19 @@ def engine(file_name='datasets/ChEMBL.txt', checkpoint_dir='checkpoint/mol_rnn',
                 time_str = f"{hours:3d} h {minutes:2d} m {seconds:2d} s"
 
                 # Save a new observation in the log.out file
-                f.write(
-                    '{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}\n'.format(global_counter, time_str, loss,
-                                                                                         trainer.learning_rate,
-                                                                                         batch_size,
-                                                                                         file_name.split("/")[-1]))
-                print('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}'.format(global_counter, time_str, loss,
-                                                                                         trainer.learning_rate,
-                                                                                         batch_size,
-                                                                                         file_name.split("/")[-1]))
+                f.write('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}\n'.format(global_counter, time_str, loss, trainer.learning_rate, batch_size, file_name.split("/")[-1]))
+                print('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}'.format(global_counter, time_str, loss, trainer.learning_rate, batch_size, file_name.split("/")[-1]))
                 # The flush() method clears the internal buffer of the file.
                 f.flush()
                 # Delete useless variables and collect the garbage
                 del loss, inputs
                 gc.collect()
-            # Interrupt the training whenever the counter is greater than the iterations required.
-            if global_counter >= iterations:
-                # Record the interruption of the training
-                # f.write('Training finished\n')
-                # print('Training finished')
-                break
+
+            if global_counter % steps_per_epoch == 0:
+                epoch += 1
+                model.save_parameters(os.path.join(checkpoint_dir, f'ckpt_{epoch}epochs.params'))
+                trainer.save_states(os.path.join(checkpoint_dir, f'trainer_{epoch}epochs.status'))
+
         # Save model parameters and state before exiting
         model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
         trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
@@ -235,7 +226,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
                 num_workers=0, k=5, p=0.8, embedding_size=16, hidden_sizes=(32, 64, 128, 128, 256, 256),
                 skip_layer_size=256, dense_layer_sizes=(512,), policy_layers_size=128, activation='relu', rnn_layers=3,
                 gpu_ids=(0, 1, 2, 3), lr=1e-3, decay=0.015, decay_step=100, clip_grad=3.0, iterations=30000,
-                summary_step=200):
+                summary_step=200, steps_per_epoch=1000):
     """
     Prepares the data from the given file, train the described model and saves it into the chosen folder. The model
     created by this function is the conditional molRnn architecture.
@@ -405,6 +396,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
     if not is_continuous:
         t0 = time.time()
         global_counter = 0
+        epoch = 0
     else:
         # load the last record values saved in the log.out file
         with open(os.path.join(checkpoint_dir, 'log.out')) as f:
@@ -419,18 +411,17 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
         t0 = time.time() - t_final
         # Code line to stat the step count from the last saved value.
         global_counter = count
+        epoch = global_counter // steps_per_epoch
 
     # Open the log.out file in different modes according if it has been already created
     with open(os.path.join(checkpoint_dir, 'log.out'), mode='w' if not is_continuous else 'a') as f:
         if not is_continuous:
             # If not initialise the table with the name of the columns
-            f.write('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR',
-                                                                                 'Batch size',
-                                                                                 'Dataset') + '\n' + '--' * 50 + '\n')
+            f.write('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR', 'Batch size', 'Dataset') + '\n' + '--' * 50 + '\n')
         # Perform a training step until required
-        print('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR',
-                                                                           'Batch size', 'Dataset') + '\n' + '--' * 50)
-        while True and (global_counter < iterations):
+        print('{:<10} | {:<20} | {:<20} | {:<10} | {:<10} | {:<20}'.format('Step', 'Time elapsed', 'Loss', 'LR', 'Batch size', 'Dataset') + '\n' + '--' * 50)
+        
+        while global_counter < iterations:
             global_counter += 1
             # Load a batch of input data for each GPUs available
             try:
@@ -488,39 +479,32 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
                 # Save the parameters and the states of the model
                 model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
                 trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
-
+                
                 hours, minutes, seconds = time_elapsed(t0)
                 time_str = f"{hours:3d} h {minutes:2d} m {seconds:2d} s"
 
                 # Save a new observation in the log.out file
-                f.write(
-                    '{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}\n'.format(global_counter, time_str, loss,
-                                                                                         trainer.learning_rate,
-                                                                                         batch_size,
-                                                                                         file_name.split("/")[-1]))
-                print('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}'.format(global_counter, time_str, loss,
-                                                                                         trainer.learning_rate,
-                                                                                         batch_size,
-                                                                                         file_name.split("/")[-1]))
+                f.write('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}\n'.format(global_counter, time_str, loss, trainer.learning_rate, batch_size, file_name.split("/")[-1]))
+                print('{:<10} | {:20} | {:<20.8f} | {:<10.7f} | {:<10d} | {:<20}'.format(global_counter, time_str, loss, trainer.learning_rate, batch_size, file_name.split("/")[-1]))
                 # The flush() method clears the internal buffer of the file.
                 f.flush()
                 # Delete useless variables and collect the garbage
                 del loss, inputs
                 gc.collect()
-            # Interrupt the training whenever the counter is greater than the iterations required.
-            if global_counter >= iterations:
-                # Record the interruption of the training
-                # f.write('Training finished\n')
-                # print('Training finished')
-                break
+
+            if global_counter % steps_per_epoch == 0:
+                epoch += 1
+                model.save_parameters(os.path.join(checkpoint_dir, f'ckpt_{epoch}epochs.params'))
+                trainer.save_states(os.path.join(checkpoint_dir, f'trainer_{epoch}epochs.status'))
+
         # Save model parameters and state before exiting
         model.save_parameters(os.path.join(checkpoint_dir, 'ckpt.params'))
         trainer.save_states(os.path.join(checkpoint_dir, 'trainer.status'))
 
 
 def time_elapsed(start_time):
-    elapsed = time.time() - start_time
-    hours = int(elapsed / 3600)
-    minutes = int(int(elapsed / 60) % 60)
-    seconds = int(elapsed % 60)
-    return hours, minutes, seconds
+  elapsed = time.time() - start_time
+  hours = int(elapsed / 3600)
+  minutes = int(int(elapsed / 60) % 60)
+  seconds = int(elapsed % 60)
+  return hours, minutes, seconds
