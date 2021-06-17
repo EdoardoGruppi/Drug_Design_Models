@@ -88,7 +88,7 @@ def train_epoch(model, data_list, int_data_list, optimizer, criterion, model_nam
             losses.append(loss.data.item())
             count += 1
             # Intermediary saves
-            if i % 10 == 0:
+            if count % 10 == 0:
                 torch.save(model.state_dict(), os.path.join(model_folder, model_name))
                 # Print training info
                 hours, minutes, seconds = time_elapsed(start_time)
@@ -97,6 +97,8 @@ def train_epoch(model, data_list, int_data_list, optimizer, criterion, model_nam
                 print(output_string)
                 file.write(output_string + '\n')
                 file.flush()
+            if count % 100 == 0:
+                torch.save(model.state_dict(), os.path.join(model_folder, f'network-{count}.pth'))
     torch.save(model.state_dict(), os.path.join(model_folder, model_name))
     # Print training info
     hours, minutes, seconds = time_elapsed(start_time)
@@ -138,4 +140,5 @@ def train(model, data, int_data, epochs, model_name, output_file='training.txt',
 
 def load_model(model, model_file="network.pth"):
     model.load_state_dict(torch.load(os.path.join(model_folder, model_file)))
+    print('Model loaded.')
     return model
