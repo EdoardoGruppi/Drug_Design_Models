@@ -3,6 +3,7 @@ checkpoint/*
 
 datasets/*
 !datasets/datasets.md
+!datasets/atom_types.txt
 
 .idea
 
