@@ -98,47 +98,38 @@ grad_norm = lambda m: math.sqrt(sum([p.grad.norm().item() ** 2 for p in m.parame
   
 progress = open(os.path.join(args.save_dir, 'Training'), 'a')
 
+exception = 0
+
 meters = np.zeros(6)
 start_time = time.time() - t_final
 for epoch in range(args.epoch):
 
-    # dataset = DataFolder(args.train, args.batch_size)
-    # for batch in tqdm(dataset):
-    #     total_step += 1
-    #     model.zero_grad()
-    #     loss, kl_div, wacc, iacc, tacc, sacc = model(*batch, beta=beta)
-    #     loss.backward()
-    #     nn.utils.clip_grad_norm_(model.parameters(), args.clip_norm)
-    #     optimizer.step()
-    #     meters = meters + np.array([kl_div, loss.item(), wacc * 100, iacc * 100, tacc * 100, sacc * 100])
-    #     if total_step % args.anneal_iter == 0:
-    #         scheduler.step()
-    #         print("learning rate: %.6f" % scheduler.get_lr()[0])
-    #     if total_step >= args.warmup and total_step % args.kl_anneal_iter == 0:
-    #         beta = min(args.max_beta, beta + args.step_beta)
+    folder_list = [item for item in os.listdir(args.train) if item not in ['.ipynb_checkpoints' ]]
 
-    for fn in os.listdir(args.train):
-        if fn != '.ipynb_checkpoints':
-            dataset = DataFile(data_file=os.path.join(args.train, fn))
-            for batch in tqdm(dataset):
-                total_step += 1
-                model.zero_grad()
-                loss, kl_div, wacc, iacc, tacc, sacc = model(*batch, beta=beta)
-                loss.backward()
-                nn.utils.clip_grad_norm_(model.parameters(), args.clip_norm)
-                optimizer.step()
-                meters = meters + np.array([kl_div, loss.item(), wacc * 100, iacc * 100, tacc * 100, sacc * 100])
-                if total_step % args.anneal_iter == 0:
-                    scheduler.step()
-                    print("learning rate: %.6f" % scheduler.get_lr()[0])
-                if total_step >= args.warmup and total_step % args.kl_anneal_iter == 0:
-                    beta = min(args.max_beta, beta + args.step_beta)
-    
+    for fn in folder_list:
+        print(fn)
+        data_set = DataFile(data_file=os.path.join(args.train, fn))
+        for batch in tqdm(data_set):
+            total_step += 1
+
+            model.zero_grad()
+            loss, kl_div, wacc, iacc, tacc, sacc = model(*batch, beta=beta)
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), args.clip_norm)
+            optimizer.step()
+            
+            meters = meters + np.array([kl_div, loss.item(), wacc * 100, iacc * 100, tacc * 100, sacc * 100])
+            if total_step % args.anneal_iter == 0:
+                scheduler.step()
+                print("learning rate: %.6f" % scheduler.get_lr()[0])
+            if total_step >= args.warmup and total_step % args.kl_anneal_iter == 0:
+                beta = min(args.max_beta, beta + args.step_beta)
+
         ckpt = (model.state_dict(), optimizer.state_dict(), total_step, beta)
         torch.save(ckpt, os.path.join(args.save_dir, f"model.ckpt.{epoch + 1 + count}"))
 
-        meters = meters / len(dataset)
-        del dataset
+        meters = meters / len(data_set)
+        del data_set
         print("[%d] Beta: %.3f, KL: %.2f, loss: %.3f, Word: %.2f, %.2f, Topo: %.2f, Assm: %.2f, PNorm: %.2f, GNorm: %.2f" % (total_step, beta, meters[0], meters[1], meters[2], meters[3], meters[4], meters[5], param_norm(model), grad_norm(model)))
         # Print training info
         hours, minutes, seconds = time_elapsed(start_time)
@@ -147,3 +138,4 @@ for epoch in range(args.epoch):
         sys.stdout.flush()
         meters *= 0
 progress.close()
+
