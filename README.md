@@ -8,6 +8,8 @@ This project is a reimplementation of the models introduced in the following pap
 
 3. "Hierarchical generation of molecular graphs using structural motifs." ([paper](https://arxiv.org/pdf/2002.03230.pdf)). [Official GitHub repository](https://github.com/wengong-jin/hgraph2graph)
 
+4. "Mol-CycleGAN: a generative model for molecular optimization." [paper](https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0404-1.pdf). [Official GitHub repository](https://github.com/ardigen/mol-cycle-gan)
+
 Specifically, the code is a slightly updated version of that published by the authors in their projects.
 
 **Important:** Even if the code presented in this repository is almost entirely based on the code published by the
@@ -20,3 +22,5 @@ Yasonik, Jacob. "Multiobjective de novo drug design with recurrent neural networ
 Blaschke, Thomas, et al. "REINVENT 2.0: An AI Tool for De Novo Drug Design." [paper](https://pubs.acs.org/doi/full/10.1021/acs.jcim.0c00915) Journal of Chemical Information and Modeling (2020).
 
 Jin, Wengong, Regina Barzilay, and Tommi Jaakkola. "Hierarchical generation of molecular graphs using structural motifs." [arxiv](https://arxiv.org/pdf/2002.03230.pdf) International Conference on Machine Learning. PMLR, 2020.
+
+Maziarka, Łukasz, et al. "Mol-CycleGAN: a generative model for molecular optimization." [paper](https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0404-1.pdf) Journal of Cheminformatics 12.1 (2020): 1-18.
