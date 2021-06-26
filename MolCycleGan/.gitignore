@@ -1,0 +1,19 @@
+# DATA
+*.csv
+data/results/*
+
+# IPYTHON CHECKPOINTS
+*.ipynb_checkpoints
+
+# PICKLES
+*.pkl.gz
+
+# CACHE
+*__pycache__
+
+data/*
+!data/input_data
+data/input_data/*
+!data/input_data/aromatic_rings
+data/input_data/aromatic_rings/*
+! data/input_data/aromatic_rings/datasets_generator_aromatic_rings.ipynb
