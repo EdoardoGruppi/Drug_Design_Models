@@ -7,3 +7,4 @@ from scoring.score_components.tanimoto_similarity import TanimotoSimilarity
 from scoring.score_components.selectivity_component import SelectivityComponent
 from scoring.score_components.synthetic_accessibility import *
 from scoring.score_components.physchem import *
+from scoring.score_components.activity_score import ActivityScore

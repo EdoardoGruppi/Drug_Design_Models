@@ -1,10 +1,9 @@
 from typing import List
-
 from scoring.component_parameters import ComponentParameters
 from scoring.score_components import TanimotoSimilarity, \
     JaccardDistance, CustomAlerts, QedScore, MatchingSubstructure, \
     PredictivePropertyComponent, SelectivityComponent, \
-    SASComponent, MolWeight, PSA, RotatableBonds, HBD_Lipinski, NumRings, HBA_Lipinski, SlogP
+    SASComponent, MolWeight, PSA, RotatableBonds, HBD_Lipinski, NumRings, HBA_Lipinski, SlogP, ActivityScore
 from scoring.score_components.base_score_component import BaseScoreComponent
 from utils.enums.scoring_function_component_enum import ScoringFunctionComponentNameEnum
 
@@ -31,7 +30,8 @@ class ScoreComponentFactory:
             enum.SLOGP: SlogP,
             enum.NUM_RINGS: NumRings,
             enum.SELECTIVITY: SelectivityComponent,
-            enum.SA_SCORE: SASComponent
+            enum.SA_SCORE: SASComponent,
+            enum.ACTIVITY_SCORE: ActivityScore
         }
         return component_map
 
