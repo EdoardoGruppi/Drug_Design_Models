@@ -11,9 +11,7 @@ data/results/*
 # CACHE
 *__pycache__
 
-data/*
-!data/input_data
-data/input_data/*
-!data/input_data/aromatic_rings
+data/reuslts
+data/__init__.py
 data/input_data/aromatic_rings/*
 ! data/input_data/aromatic_rings/datasets_generator_aromatic_rings.ipynb
