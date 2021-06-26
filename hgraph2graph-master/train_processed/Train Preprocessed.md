@@ -1,0 +1,1 @@
+This folder is aimed to contain the preprocess data that will be used during the training.
