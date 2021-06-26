@@ -226,7 +226,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
                 num_workers=0, k=5, p=0.8, embedding_size=16, hidden_sizes=(32, 64, 128, 128, 256, 256),
                 skip_layer_size=256, dense_layer_sizes=(512,), policy_layers_size=128, activation='relu', rnn_layers=3,
                 gpu_ids=(0, 1, 2, 3), lr=1e-3, decay=0.015, decay_step=100, clip_grad=3.0, iterations=30000,
-                summary_step=200, steps_per_epoch=1000):
+                summary_step=200, steps_per_epoch=1000, cond_code_length=2):
     """
     Prepares the data from the given file, train the described model and saves it into the chosen folder. The model
     created by this function is the conditional molRnn architecture.
@@ -277,7 +277,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
             elif cond_type == 'prop':
                 # Create the property conditional code as a list of property values
                 cond = data.Delimited()
-                N_C = 2
+                N_C = cond_code_length
             else:
                 raise ValueError
             # Read every line of the given file and remove all the characters: '\n' and '\r'
@@ -291,7 +291,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
         else:
             # Create the kinase conditional code as a list of float values.
             cond = data.Delimited()
-            N_C = 2
+            N_C = cond_code_length
             # Read every line of the given file and remove all the characters: '\n' and '\r'
             with open(file_name) as f:
                 dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
@@ -321,7 +321,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
             elif cond_type == 'prop':
                 # Create the property conditional code as a list of property values
                 cond = data.Delimited()
-                N_C = 2
+                N_C = cond_code_length
             else:
                 raise ValueError
             # Read every line of the given file and remove all the characters: '\n' and '\r'
@@ -343,7 +343,7 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
         else:
             # Create the kinase conditional code as a list of float values.
             cond = data.Delimited()
-            N_C = 2
+            N_C = cond_code_length
             # Read every line of the given file and remove all the characters: '\n' and '\r'
             with open(file_name) as f:
                 dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
