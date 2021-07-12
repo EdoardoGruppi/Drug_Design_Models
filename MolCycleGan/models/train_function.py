@@ -1,12 +1,8 @@
 from itertools import chain
-
 import numpy as np
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.layers import (Input,
-                          BatchNormalization,
-                          Lambda)
-
+from keras.layers import (Input, BatchNormalization, Lambda)
 from .loss import generator_loss, discriminator_loss
 
 
@@ -17,12 +13,8 @@ def get_train_function(inputs, loss_function, lambda_layer_inputs):
     return train_function
 
 
-def generator_train_function_creator(discriminators_tuple,
-                                     generators_tuple,
-                                     real_imgs_tuple,
-                                     fake_imgs_tuple,
-                                     loss_weights_tuple,
-                                     use_wgan=False):
+def generator_train_function_creator(discriminators_tuple, generators_tuple, real_imgs_tuple, fake_imgs_tuple,
+                                     loss_weights_tuple, use_wgan=False):
     netD_A, netD_B = discriminators_tuple
     netG_A, netG_B = generators_tuple
     real_A, real_B = real_imgs_tuple
@@ -45,19 +37,14 @@ def generator_train_function_creator(discriminators_tuple,
         if isinstance(layer, BatchNormalization):
             layer._per_input_updates = {}
 
-    netG_loss_partial = lambda x: generator_loss(x,
-                                                 cycle_loss_weight=cycle_loss_weight,
-                                                 id_loss_weight=id_loss_weight,
+    netG_loss_partial = lambda x: generator_loss(x, cycle_loss_weight=cycle_loss_weight, id_loss_weight=id_loss_weight,
                                                  use_wgan=use_wgan)
     netG_train_function = get_train_function(inputs=[real_A, real_B], loss_function=netG_loss_partial,
                                              lambda_layer_inputs=lambda_layer_inputs)
     return netG_train_function
 
 
-def discriminator_A_train_function_creator(discriminators_tuple,
-                                           generators_tuple,
-                                           real_imgs_tuple,
-                                           input_shape,
+def discriminator_A_train_function_creator(discriminators_tuple, generators_tuple, real_imgs_tuple, input_shape,
                                            use_wgan=False):
     netD_A, netD_B = discriminators_tuple
     netG_A, netG_B = generators_tuple
@@ -76,17 +63,12 @@ def discriminator_A_train_function_creator(discriminators_tuple,
             layer._per_input_updates = {}
 
     netD_loss_partial = lambda x: discriminator_loss(x, use_wgan=use_wgan)
-    netD_A_train_function = get_train_function(inputs=[real_A, _fake_A],
-                                               loss_function=netD_loss_partial,
-                                               lambda_layer_inputs=[netD_A_predict_real,
-                                                                    _netD_A_predict_fake])
+    netD_A_train_function = get_train_function(inputs=[real_A, _fake_A], loss_function=netD_loss_partial,
+                                               lambda_layer_inputs=[netD_A_predict_real, _netD_A_predict_fake])
     return netD_A_train_function
 
 
-def discriminator_B_train_function_creator(discriminators_tuple,
-                                           generators_tuple,
-                                           real_imgs_tuple,
-                                           input_shape,
+def discriminator_B_train_function_creator(discriminators_tuple, generators_tuple, real_imgs_tuple, input_shape,
                                            use_wgan=False):
     netD_A, netD_B = discriminators_tuple
     netG_A, netG_B = generators_tuple
@@ -105,10 +87,8 @@ def discriminator_B_train_function_creator(discriminators_tuple,
             layer._per_input_updates = {}
 
     netD_loss_partial = lambda x: discriminator_loss(x, use_wgan=use_wgan)
-    netD_B_train_function = get_train_function(inputs=[real_B, _fake_B],
-                                               loss_function=netD_loss_partial,
-                                               lambda_layer_inputs=[netD_B_predict_real,
-                                                                    _netD_B_predict_fake])
+    netD_B_train_function = get_train_function(inputs=[real_B, _fake_B], loss_function=netD_loss_partial,
+                                               lambda_layer_inputs=[netD_B_predict_real, _netD_B_predict_fake])
     return netD_B_train_function
 
 

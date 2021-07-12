@@ -15,3 +15,6 @@ data/reuslts
 data/__init__.py
 data/input_data/aromatic_rings/*
 ! data/input_data/aromatic_rings/datasets_generator_aromatic_rings.ipynb
+
+.idea/
+data/input_data/
