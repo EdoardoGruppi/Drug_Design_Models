@@ -32,11 +32,12 @@ def load_model(opts):
     return model.cuda()
 
 
-def decode_from_jtvae(data_path, opts, model):
+def decode_from_jtvae(data_path, opts, model, txt_file):
     smiles_df = pd.read_csv(data_path, index_col=0)
     mols = smiles_df.values
     returned_smiles = []
 
+    txt_file = open(txt_file, 'w')
     tree_dims = int(opts.latent_size / 2)
 
     for i in tqdm.tqdm(range(mols.shape[0])):
@@ -46,8 +47,28 @@ def decode_from_jtvae(data_path, opts, model):
         mol_vec = torch.autograd.Variable(torch.from_numpy(mol_vec).cuda().float())
         smi = model.decode(tree_vec, mol_vec, prob_decode=False)
         returned_smiles.append(smi)
-
+        if smi is not None:
+            txt_file.write(smi + '\n')
+            txt_file.flush()
+    
+    txt_file.close()
     return returned_smiles
+    
+    
+def encode_to_jtvae(opts, txt_path):
+    vocab = [x.strip("\r\n ") for x in open(opts.vocab_path)]
+    vocab = Vocab(vocab)
+    hidden_size = int(opts.hidden_size)
+    latent_size = int(opts.latent_size)
+    depth = int(opts.depth)
+    model = JTNNVAE(vocab, hidden_size, latent_size, depth)
+    model.load_state_dict(torch.load(opts.model_path))
+    model.cuda()
+    with open(txt_path, 'r') as f:
+        smiles = f.read().splitlines()
+    for smile in tqdm(smiles):
+        encoding = model.encode(smile)
+        print(encoding)    
 
 
 def decode(jtvae_path_tuple, jtvae_setting_tuple, encoding_data_tuple):
@@ -61,12 +82,18 @@ def decode(jtvae_path_tuple, jtvae_setting_tuple, encoding_data_tuple):
     save_path_A_to_B = os.path.join(data_path, save_name + 'A_to_B.csv')
     save_path_B_to_A = os.path.join(data_path, save_name + 'B_to_A.csv')
 
+    save_path_A_to_B_txt = os.path.join(data_path, save_name + 'A_to_B.txt')
+    save_path_B_to_A_txt = os.path.join(data_path, save_name + 'B_to_A.txt')
+
+    print('Loading JTVAE model...')
     opts = Options(jtvae_path=jtvae_path, hidden_size=hidden_size, latent_size=latent_size, depth=depth,
                    jtnn_model_path=jtnn_model_path, vocab_path=vocab_path)
     model = load_model(opts)
 
-    smiles_A_to_B = decode_from_jtvae(path_A_to_B, opts, model)
-    smiles_B_to_A = decode_from_jtvae(path_B_to_A, opts, model)
+    print('Decoding molecules from A to B...')
+    smiles_A_to_B = decode_from_jtvae(path_A_to_B, opts, model, save_path_A_to_B_txt)
+    print('Decoding molecules from B to A...')
+    smiles_B_to_A = decode_from_jtvae(path_B_to_A, opts, model, save_path_B_to_A_txt)
 
     df_to_save_A_to_B = pd.DataFrame(smiles_A_to_B, columns=['SMILES'])
     df_to_save_B_to_A = pd.DataFrame(smiles_B_to_A, columns=['SMILES'])

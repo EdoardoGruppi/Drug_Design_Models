@@ -1,5 +1,9 @@
 from keras import backend as K
-from keras.layers import (Activation, Add, BatchNormalization, Dropout, LeakyReLU)
+from keras.layers import (Activation,
+                          Add,
+                          BatchNormalization,
+                          Dropout,
+                          LeakyReLU)
 from keras.layers.core import Dense
 
 

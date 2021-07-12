@@ -5,7 +5,9 @@ import pandas as pd
 
 
 def load_data(path, input_shape):
-    return pd.read_csv(path, index_col=0).values.reshape((-1,) + input_shape)
+    values = pd.read_csv(path, index_col=0).values
+    values = values.reshape((-1,) + input_shape)
+    return values
 
 
 def minibatch(data, batch_size):
@@ -26,10 +28,11 @@ def minibatch(data, batch_size):
 
 
 def minibatchAB(dataA, dataB, batch_size):
+    print('Each epoch is made up of {} iters'.format(len(dataA)//batch_size))
     batchA = minibatch(dataA, batch_size)
     batchB = minibatch(dataB, batch_size)
 
     while True:
         ep1, A = next(batchA)
         ep2, B = next(batchB)
-        yield max(ep1, ep2), A, B
+        yield min(ep1, ep2), A, B
