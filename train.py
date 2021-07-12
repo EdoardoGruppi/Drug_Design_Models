@@ -348,12 +348,17 @@ def engine_cond(cond_type='scaffold', file_name='datasets/ChEMBL_scaffold.txt', 
             with open(file_name) as f:
                 dataset = data.Lambda(f.readlines(), lambda _x: _x.strip('\n').strip('\r'))
 
-            # Filter a line setting the last element as the value passed.
+            # Filter each element observing if the last element corresond to the fold_id
             def _filter(_line, _i):
                 return int(_line.split('\t')[-1]) == _i
 
-            db_train = data.Lambda(data.Filter(dataset, fn=lambda _x: not _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
-            db_test = data.Lambda(data.Filter(dataset, fn=lambda _x: _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
+            dataset = data.Filter(dataset, fn=lambda _x: _filter(_x, 1))
+            print(dataset[0:20])
+            db_train = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=True)
+            db_test = data.KFold(dataset, k=num_folds, fold_id=fold_id, is_train=False)
+#            db_train = data.Lambda(data.Filter(dataset, fn=lambda _x: not _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
+#            db_test = data.Lambda(data.Filter(dataset, fn=lambda _x: _filter(_x, fold_id)), fn=lambda _x: _x[:-2])
+            
             # Get Sampler and Loader to prepare the training dataset
             loader_train = data.CMolRNNLoader(db_train, shuffle=True, num_workers=num_workers, k=k, p=p,
                                               conditional=cond, batch_size=batch_size)
