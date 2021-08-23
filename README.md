@@ -10,6 +10,10 @@ This project is a reimplementation of the models introduced in the following pap
 
 4. "Mol-CycleGAN: a generative model for molecular optimization." ([paper](https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0404-1.pdf)). [Official GitHub repository](https://github.com/ardigen/mol-cycle-gan).
 
+5. "Multi-objective de novo drug design with conditional graph generative model." ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)). [Official GitHub repository](https://github.com/kevinid/molecule_generator/tree/ff93eaef143ca04af905b50a2862f4099b2371a5).
+
+6. "Multi-objective de novo drug design with conditional graph generative model." ([paper](https://arxiv.org/pdf/1806.02473)). [Official GitHub repository](https://github.com/bowenliu16/rl_graph_generation).
+
 Specifically, the code is a slightly updated version of that published by the authors in their projects.
 
 **Important:** Even if the code presented in this repository is almost entirely based on the code published by the
@@ -24,3 +28,7 @@ Blaschke, Thomas, et al. "REINVENT 2.0: An AI Tool for De Novo Drug Design." [pa
 Jin, Wengong, Regina Barzilay, and Tommi Jaakkola. "Hierarchical generation of molecular graphs using structural motifs." [arxiv](https://arxiv.org/pdf/2002.03230.pdf) International Conference on Machine Learning. PMLR, 2020.
 
 Maziarka, Łukasz, et al. "Mol-CycleGAN: a generative model for molecular optimization." [paper](https://jcheminf.biomedcentral.com/track/pdf/10.1186/s13321-019-0404-1.pdf) Journal of Cheminformatics 12.1 (2020): 1-18.
+
+Li, Yibo, Liangren Zhang, and Zhenming Liu. "Multi-objective de novo drug design with conditional graph generative model." [paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf) Journal of cheminformatics 10.1 (2018): 1-24.
+
+You, Jiaxuan, et al. "Graph convolutional policy network for goal-directed molecular graph generation." [paper](https://arxiv.org/pdf/1806.02473) arXiv preprint arXiv:1806.02473 (2018).
