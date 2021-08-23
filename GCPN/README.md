@@ -1,6 +1,6 @@
 # Description of the project
 
-[Project](https://github.com/EdoardoGruppi/GCPN)
+[Project](https://github.com/EdoardoGruppi/Drug_Design_Models/tree/main/GCPN)
 
 This project is a reimplementation of the model introduced in the following paper: "Graph convolutional policy network
 for goal-directed molecular graph generation." ([paper](https://arxiv.org/pdf/1806.02473.pdf)). Specifically, the code
@@ -23,10 +23,10 @@ in the Sections below.
 comment the line that install the gym package in the setup.py of the baselines
 -->
 
-1. Download the project directory from [GitHub](https://github.com/EdoardoGruppi/GCPN).
+1. Download the project directory from [GitHub](https://github.com/EdoardoGruppi/Drug_Design_Models/tree/main/GCPN).
 
 2. Install all the packages appointed in
-   the [requirements.txt](https://github.com/EdoardoGruppi/GCPN/blob/main/requirements.txt) file or follow the below
+   the [requirements.txt](https://github.com/EdoardoGruppi/Drug_Design_Models/blob/main/GCPN/requirements.txt) file or follow the below
    steps.
 
 3. Run the following lines on the terminal:
@@ -51,6 +51,7 @@ comment the line that install the gym package in the setup.py of the baselines
    ```
 
 6. Install the following libraries with pip:
+
    ```
    pip install matplotlib tensorboardX
    ```
@@ -63,9 +64,11 @@ comment the line that install the gym package in the setup.py of the baselines
 
 8. The code works on GPU as soon as the proper versions of cuda and cudnn are installed. Install cuda toolkit running
    the below line in the terminal:
+
    ```
    conda install -c anaconda cudatoolkit=11.0
    ```
+
    Then install with the same modalities the cudnn package required.
 
 9. Insert the following code in the main.py to allocate the GPU memory only when effectively needed.
@@ -97,16 +100,17 @@ generation." [arXiv](https://arxiv.org/abs/1806.02473) preprint arXiv:1806.02473
 ## Issues
 
 - if a problem occurs during the installation of cuda toolkit and cudnn, be sure to have installed the proper versions
-  of the libraries. Note: the version depends on the device used to run the code. In case the error outputted state that no library 
+  of the libraries. Note: the version depends on the device used to run the code. In case the error outputted state that no library
   cusolver64_11.dll is found, rename the cusolver64_10.dll file to cusolver64_11.dll in the folder:
+
   ```
    C:\Users\<user name>\anaconda3\envs\<name env>\Library\bin
   ```
 
 - if the following error interrupts the code execution, please ensure that the mpi4py is installed as described above.
-   ```
-   from mpi4py import MPI ImportError: DLL load failed: 
-   ```
+  ```
+  from mpi4py import MPI ImportError: DLL load failed:
+  ```
 
 ## Software used
 
@@ -123,5 +127,3 @@ machine learning libraries and it offers GPUs where you can execute the code as 
 > <img src="https://user-images.githubusercontent.com/674621/71187801-14e60a80-2280-11ea-94c9-e56576f76baf.png" width="80" alt="vscode">
 
 Visual Studio Code is a code editor optimized for building and debugging modern web and cloud applications.
-
-

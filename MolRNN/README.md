@@ -1,6 +1,6 @@
 # Description of the project
 
-[Project](https://github.com/EdoardoGruppi/MolRNN)
+[Project](https://github.com/EdoardoGruppi/Drug_Design_Models/tree/main/MolRNN)
 
 This project is a reimplementation of the models introduced in the following paper: "Multi-objective de novo drug design
 with conditional graph generative model" ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)).
@@ -26,10 +26,10 @@ Code converted running the following command on the terminal:
 python -m lib2to3 --output-dir=C:\Users\<user>\<path>\<folder-where-to-save-py3-code> -W -n C:\Users\<user>\<path>\<folder-with-py2-code>
 -->
 
-1. Download the project directory from [GitHub](https://github.com/EdoardoGruppi/MolRNN).
+1. Download the project directory from [GitHub](https://github.com/EdoardoGruppi/Drug_Design_Models/tree/main/MolRNN).
 
 2. Install all the packages appointed in
-   the [requirements.txt](https://github.com/EdoardoGruppi/MolRNN/blob/main/requirements.txt) file or follow the below
+   the [requirements.txt](https://github.com/EdoardoGruppi/Drug_Design_Models/blob/main/MolRNN/requirements.txt) file or follow the below
    steps.
 
 3. Install the correct rdkit version with conda:
