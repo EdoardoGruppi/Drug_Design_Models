@@ -12,7 +12,7 @@ This project is a reimplementation of the models introduced in the following pap
 
 5. "Multi-objective de novo drug design with conditional graph generative model." ([paper](https://link.springer.com/content/pdf/10.1186/s13321-018-0287-6.pdf)). [Official GitHub repository](https://github.com/kevinid/molecule_generator/tree/ff93eaef143ca04af905b50a2862f4099b2371a5).
 
-6. "Multi-objective de novo drug design with conditional graph generative model." ([paper](https://arxiv.org/pdf/1806.02473)). [Official GitHub repository](https://github.com/bowenliu16/rl_graph_generation).
+6. "Graph convolutional policy network for goal-directed molecular graph generation." ([paper](https://arxiv.org/pdf/1806.02473)). [Official GitHub repository](https://github.com/bowenliu16/rl_graph_generation).
 
 Specifically, the code is a slightly updated version of that published by the authors in their projects.
 
