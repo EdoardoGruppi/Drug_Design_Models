@@ -1,0 +1,16 @@
+checkpoint/*
+!checkpoint/checkpoint.md
+
+datasets/*
+!datasets/datasets.md
+!datasets/atom_types.txt
+
+.idea
+
+mx_mg/models/__pycache__
+mx_mg/data/__pycache__
+mx_mg/__pycache__
+__pycache__
+
+images/*
+!images/images.md
