@@ -1,0 +1,8 @@
+__pycache__/
+ckpt
+molecule_gen
+runs
+.idea
+
+rl-baselines/baselines.egg-info
+gym-molecule/gym_molecule.egg-info
