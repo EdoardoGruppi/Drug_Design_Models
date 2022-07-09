@@ -68,6 +68,14 @@ python -m lib2to3 --output-dir=C:\Users\<user>\<path>\<folder-where-to-save-py3-
    pip install pandas scipy matplotlib networkx protobuf sklearn lmdb pymysql
    ```
 
+8. If using Google Colaboratory, before running the notebook add these lines within the test.py file:
+   ```
+   from rdkit.Chem import Draw, RDConfig
+   import os
+   import sys
+   sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
+   ```
+
 ## Run the code
 
 Once all the necessary packages have been installed you can run the code by typing this line on the terminal or by the
